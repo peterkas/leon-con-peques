@@ -4,7 +4,7 @@
 // - Iconos y manifiesto: primero caché.
 // - Fuentes de Google: se sirve la copia guardada y se refresca en segundo plano.
 // Sube VERSION si cambias la lista de ficheros precargados.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const NAV_TIMEOUT_MS = 3000;
 const CACHE = `leon-con-peques-${VERSION}`;
 const PRECACHE = [
@@ -18,7 +18,12 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
+  // cache: 'reload' → descarga del servidor, sin reutilizar la caché HTTP del navegador
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((c) => c.addAll(PRECACHE.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -37,8 +42,11 @@ self.addEventListener('fetch', (event) => {
   // Navegación: red primero, pero si la red tarda más de NAV_TIMEOUT_MS
   // (cobertura débil) se muestra la copia guardada. La descarga sigue en
   // segundo plano y actualiza la copia para la próxima vez.
+  // cache: 'no-cache' obliga a preguntar al servidor si hay versión nueva
+  // (GitHub Pages permite reutilizar la página 10 min sin preguntar; sin esto,
+  // la app instalada seguía mostrando la versión anterior tras un cambio).
   if (req.mode === 'navigate') {
-    const network = fetch(req).then((res) => {
+    const network = fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then((res) => {
       if (res.ok) {
         const copy = res.clone();
         return caches.open(CACHE).then((c) => c.put('./index.html', copy)).then(() => res);

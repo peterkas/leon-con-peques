@@ -740,10 +740,37 @@ recurring.forEach(r=>{
   recWrap.appendChild(el);
 });
 
-// --- PWA: service worker para uso sin conexión ---
+// --- PWA: service worker para uso sin conexión y actualizaciones ---
 if('serviceWorker' in navigator){
+  const hadController = !!navigator.serviceWorker.controller;
+  let swReg = null;
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    navigator.serviceWorker.register('./sw.js', { updateViaCache:'none' })
+      .then(r => { swReg = r; })
+      .catch(()=>{});
+  });
+  // Cuando entra en servicio una versión nueva del service worker, recargar una vez
+  // (no en la primera instalación, en la que no había uno anterior).
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(hadController && !reloading){ reloading = true; location.reload(); }
+  });
+
+  // iOS "despierta" la app instalada sin recargarla. Al volver a ella:
+  // - si ha cambiado el día o lleva más de 1 hora en segundo plano, se recarga
+  //   (así "hoy" y los eventos pasados se recalculan y entran los datos nuevos);
+  // - si no, se comprueba en silencio si hay un service worker nuevo.
+  const RELOAD_AFTER_MS = 60 * 60 * 1000;
+  let hiddenAt = null;
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'hidden'){ hiddenAt = Date.now(); return; }
+    const n = new Date();
+    const nowISO = iso(n.getFullYear(), n.getMonth(), n.getDate());
+    if(nowISO !== TODAY || (hiddenAt && Date.now() - hiddenAt > RELOAD_AFTER_MS)){
+      location.reload();
+    } else if(swReg){
+      swReg.update().catch(()=>{});
+    }
   });
 }
 </script>
