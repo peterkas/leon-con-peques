@@ -11,7 +11,10 @@
   print(`cabecera  : ${ids.range.textContent} · ${ids.updatedLine.textContent}`);
   print(`aviso     : ${ids.staleNotice.hidden ? '(ninguno)' : ids.staleNotice.innerHTML.replace(/<[^>]+>/g, '')}`);
   print(`meses     : ${ids.months.children.map(m => m.children[0].textContent).join(' | ')}`);
-  print(`finde     : ${ids.weekend.hidden ? '(oculto)' : ids.weekendTitle.textContent + ' → ' + (ids.weekendList.children.length + ' planes')}`);
+  print(`próx. días: ${ids.soon.hidden ? '(oculto)' : ids.soonTitle.textContent + ' → ' + (ids.soonList.children.length + ' planes')}`);
+  ids.soonList.children.forEach(c => { const m = c.innerHTML.replace(/\s+/g,' ').match(/wk-when">(.*?)<.*wk-title">(.*?)<.*wk-meta">(.*?)</); if (m) print(`   ▸ ${m[1].padEnd(12)} ${m[2]} | ${m[3]}`); });
+  if (!ids.soonAlso.hidden) print(`   ${ids.soonAlso.textContent}`);
+  if (!ids.soonEmpty.hidden) print(`   ${ids.soonEmpty.textContent}`);
   print(`próximos  : ${ids.cards.children.length} · ya celebrados: ${ids.pastCards.children.length}`);
   ids.cards.children.forEach(c => print(`   · ${h3(c)}`));
   if (fails.length) { fails.forEach(f => print(`FALLO: ${f}`)); throw new Error('prueba de humo fallida'); }

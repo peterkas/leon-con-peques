@@ -184,18 +184,18 @@
     text-decoration:underline; cursor:pointer;
   }
 
-  /* Este fin de semana */
-  .weekend{
+  /* Próximos días */
+  .soon{
     margin:8px 0 22px;
     padding:18px 16px 16px;
     border-radius:16px;
     background:var(--purple-soft);
     border:1px solid var(--border);
   }
-  .weekend .section-title{ font-size:20px; margin-bottom:12px; }
+  .soon .section-title{ font-size:20px; margin-bottom:12px; }
   .wk-list{ display:flex; flex-direction:column; gap:8px; }
   .wk-item{
-    display:grid; grid-template-columns:48px 1fr; gap:10px; align-items:center;
+    display:grid; grid-template-columns:58px 1fr; gap:10px; align-items:center;
     width:100%; text-align:left;
     padding:10px 12px;
     border-radius:12px;
@@ -497,11 +497,11 @@
 
   <div class="filters" id="filters" role="group" aria-label="Filtros"></div>
 
-  <section class="weekend" id="weekend" hidden>
-    <h2 class="section-title" id="weekendTitle"></h2>
-    <div class="wk-list" id="weekendList"></div>
-    <p class="wk-empty" id="weekendEmpty" hidden>No hay planes confirmados para estos días. Echa un vistazo a la programación habitual, más abajo.</p>
-    <p class="wk-also" id="weekendAlso" hidden></p>
+  <section class="soon" id="soon" hidden>
+    <h2 class="section-title" id="soonTitle"></h2>
+    <div class="wk-list" id="soonList"></div>
+    <p class="wk-empty" id="soonEmpty" hidden></p>
+    <p class="wk-also" id="soonAlso" hidden></p>
   </section>
 
 
@@ -815,15 +815,20 @@ function renderLists(){
   pastWrap.hidden = past.length === 0;
 }
 
-// ── Este fin de semana (u "Hoy domingo") ──
-function renderWeekend(){
-  const section = document.getElementById('weekend');
-  const dow = weekdayIdx(TODAY);
-  let days, title;
-  if(dow <= 4){ const sat = addDays(TODAY, 5 - dow); days = [sat, addDays(sat, 1)]; title = 'Este fin de semana'; }
-  else if(dow === 5){ days = [TODAY, addDays(TODAY, 1)]; title = 'Este fin de semana'; }
-  else { days = [TODAY]; title = 'Hoy domingo'; }
-  days = days.filter(d => inRange(d, WINDOW_START, WINDOW_END));
+// ── Próximos días: hoy y los NEXT_DAYS-1 días siguientes ──
+const NEXT_DAYS = 5;
+function dayLabel(d){
+  if(d === TODAY) return 'hoy';
+  if(d === addDays(TODAY, 1)) return 'mañana';
+  return `${WD_SHORT[weekdayIdx(d)]} ${parseISO(d).d}`;
+}
+function renderSoon(){
+  const section = document.getElementById('soon');
+  const days = [];
+  for(let i = 0; i < NEXT_DAYS; i++){
+    const d = addDays(TODAY, i);
+    if(inRange(d, WINDOW_START, WINDOW_END)) days.push(d);
+  }
   if(!days.length){ section.hidden = true; return; }
 
   const first = days[0], last = days[days.length-1];
@@ -831,43 +836,48 @@ function renderWeekend(){
   const when = first === last ? `${f.d} ${MONTHS_ES[f.m]}`
              : f.m === l.m ? `${f.d}–${l.d} ${MONTHS_ES[l.m]}`
              : `${f.d} ${MONTHS_ES[f.m]} – ${l.d} ${MONTHS_ES[l.m]}`;
-  document.getElementById('weekendTitle').textContent = `${title} · ${when}`;
+  document.getElementById('soonTitle').textContent = `Próximos días · ${when}`;
 
-  // Días del finde en que hay algo: con sesiones, solo los días con función.
+  // Días del periodo en que hay algo: con sesiones, solo los días con función.
   const coveredDays = (e) => getSessions(e).length
     ? days.filter(d => getSessions(e).some(s => s.date === d))
     : days.filter(d => inRange(d, e.start, e.end));
+  const firstDay = (e) => coveredDays(e)[0];
+  const firstTime = (e) => (getSessions(e).find(s => s.date === firstDay(e)) || {}).time || '99:99';
   const hits = events.filter(e => visible(e) && !isPast(e) && coveredDays(e).length);
-  const shortOnes = hits.filter(e => !isLong(e)).sort(byStart);
+  const shortOnes = hits.filter(e => !isLong(e))
+    .sort((a,b) => firstDay(a).localeCompare(firstDay(b)) || firstTime(a).localeCompare(firstTime(b)));
   const longOnes = hits.filter(isLong).sort(byStart);
 
-  const list = document.getElementById('weekendList');
+  const list = document.getElementById('soonList');
   list.innerHTML = '';
   shortOnes.forEach(e => {
     const covered = coveredDays(e);
-    const dayLabel = covered.map(d => d === TODAY ? 'hoy' : WD_SHORT[weekdayIdx(d)]).join(' y ');
+    const label = covered.length <= 2
+      ? covered.map(dayLabel).join(' y ')
+      : `${dayLabel(covered[0])} – ${dayLabel(covered[covered.length-1])}`;
     const t = timeText(e, covered);
     const meta = [t && `🕓 ${t}`, `📍 ${e.place}`, ageLabel(e)].filter(Boolean).map(escapeHTML).join(' · ');
     const item = document.createElement('button');
     item.type = 'button';
     item.className = 'wk-item';
     item.innerHTML = `
-      <div class="wk-when">${escapeHTML(dayLabel)}</div>
+      <div class="wk-when">${escapeHTML(label)}</div>
       <div>
         <div class="wk-title">${escapeHTML(e.title)}</div>
         <div class="wk-meta">${meta}</div>
       </div>`;
-    item.setAttribute('aria-label', `${dayLabel}: ${e.title}. Ver detalle`);
+    item.setAttribute('aria-label', `${label}: ${e.title}. Ver detalle`);
     item.addEventListener('click', () => openModal(covered[0], [e]));
     list.appendChild(item);
   });
-  const empty = document.getElementById('weekendEmpty');
+  const empty = document.getElementById('soonEmpty');
   empty.hidden = shortOnes.length > 0;
   empty.textContent = isFiltered()
     ? 'No hay planes confirmados para estos días con el filtro actual.'
-    : 'No hay planes confirmados para estos días. Echa un vistazo a la programación habitual, más abajo.';
+    : 'No hay planes confirmados para estos días. Echa un vistazo al calendario o a la programación habitual, más abajo.';
 
-  const also = document.getElementById('weekendAlso');
+  const also = document.getElementById('soonAlso');
   also.hidden = longOnes.length === 0;
   if(longOnes.length){
     also.textContent = `${shortOnes.length ? 'También' : 'Eso sí, siguen'} abiertos: ${longOnes.map(e => e.title).join(' · ')}.`;
@@ -877,7 +887,7 @@ function renderWeekend(){
 
 function renderAll(){
   renderFilters();
-  renderWeekend();
+  renderSoon();
   renderMonths();
   renderLists();
 }

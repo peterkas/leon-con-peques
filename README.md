@@ -25,7 +25,7 @@ Calendario de planes para niños de 3 a 5 años en León capital y alrededores, 
 
 ## Actualizar el calendario
 
-1. En `data.js`, edita `events` y `recurring` y las fechas `WINDOW_START`, `WINDOW_END` y `UPDATED`. En `index.html`, el texto de novedades del pie. La cabecera, los meses, el bloque "Este fin de semana" y la fecha de actualización se generan solos.
+1. En `data.js`, edita `events` y `recurring` y las fechas `WINDOW_START`, `WINDOW_END` y `UPDATED`. En `index.html`, el texto de novedades del pie. La cabecera, los meses, el bloque "Próximos días" (hoy + 4 días) y la fecha de actualización se generan solos.
    - Los campos de cada evento están documentados al principio de `data.js`: `sessions` (funciones con hora, cada una añadible al calendario), `age`, `price`, `duration`, `tickets`, `mapQuery`… Lo que no diga la fuente, se deja sin poner (no se inventa).
    - Antes de hacer commit, ejecuta `./tools/test.sh`.
 2. Haz commit y push a `main`. El flujo **Publicar** valida, genera los `.ics` y publica en uno o dos minutos. Si la validación falla, no se publica nada.
