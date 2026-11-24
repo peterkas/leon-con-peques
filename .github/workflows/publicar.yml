@@ -1,0 +1,50 @@
+# Valida los datos, genera los .ics y publica la web en GitHub Pages.
+# Si la validación o la prueba de humo fallan, no se publica nada (sigue la versión anterior).
+# Requiere: Settings → Pages → Source: "GitHub Actions".
+name: Publicar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validar datos, generar .ics y prueba de humo
+        run: ./tools/test.sh "$(TZ=Europe/Madrid date +%F)"
+
+      - name: Preparar el sitio
+        run: |
+          mkdir _site
+          cp -r index.html data.js lib.js sw.js manifest.webmanifest .nojekyll icons ics _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

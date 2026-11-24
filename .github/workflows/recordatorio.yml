@@ -1,0 +1,41 @@
+# Cada lunes comprueba la fecha UPDATED de data.js. Si los datos tienen 8 días o más,
+# abre una incidencia "Toca actualizar" (GitHub te avisa por email / app). Cuando se
+# actualiza, cierra las que siguieran abiertas.
+name: Recordatorio de actualización
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'   # lunes, 07:00 UTC (8:00 en León en invierno)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar antigüedad de los datos
+        run: |
+          UPDATED=$(sed -n "s/^const UPDATED *= *'\([0-9-]*\)'.*/\1/p" data.js)
+          DAYS=$(( ( $(date -u +%s) - $(date -u -d "$UPDATED" +%s) ) / 86400 ))
+          echo "UPDATED=$UPDATED → hace $DAYS días"
+          OPEN=$(gh issue list --label actualizacion --state open --json number -q '.[].number')
+
+          if [ "$DAYS" -ge 8 ]; then
+            if [ -z "$OPEN" ]; then
+              gh label create actualizacion --color C79BD6 --description "Recordatorio de actualización semanal" --force
+              gh issue create --label actualizacion \
+                --title "Toca actualizar León con Peques (datos de hace $DAYS días)" \
+                --body "La última revisión de fuentes es del **$UPDATED**. Abre Claude Code y ejecuta \`/leon-actualizar\`. Esta incidencia se cerrará sola tras la actualización."
+            else
+              echo "Ya hay una incidencia abierta: $OPEN"
+            fi
+          else
+            for n in $OPEN; do gh issue close "$n" --comment "Datos actualizados el $UPDATED. ✅"; done
+          fi
