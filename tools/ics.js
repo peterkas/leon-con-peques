@@ -1,15 +1,10 @@
-// Genera un .ics por evento a partir de data.js. Se ejecuta con jsc (JavaScriptCore,
+// Genera los .ics a partir de data.js + lib.js. Se ejecuta con jsc (JavaScriptCore,
 // incluido en macOS) desde tools/build-ics.sh, que reparte la salida en ficheros.
 // Formato de salida: para cada fichero, una línea "=====FILE <ruta>" y su contenido.
+//
+//   ics/<id>.ics              todas las funciones del evento (o el evento de día completo)
+//   ics/<id>-<AAAAMMDD>-<HHMM>.ics   una sola función (solo si el evento tiene varias)
 
-const SITE = 'https://peterkas.github.io/leon-con-peques/';
-
-function compact(s){ return s.replace(/-/g, ''); }
-function addDays(s, n){
-  const [y, m, d] = s.split('-').map(Number);
-  const t = new Date(Date.UTC(y, m - 1, d) + n * 86400000);
-  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}-${String(t.getUTCDate()).padStart(2, '0')}`;
-}
 function esc(s){
   return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
 }
@@ -20,65 +15,80 @@ function utf8len(ch){
 // RFC 5545: líneas de máximo 75 octetos; las de continuación empiezan por un espacio.
 function fold(line){
   const out = [];
-  let cur = '', bytes = 0, limit = 75;
+  let cur = '', bytes = 0;
   for (const ch of line) {
     const b = utf8len(ch);
-    if (bytes + b > limit) { out.push(cur); cur = ' '; bytes = 1; limit = 75; }
+    if (bytes + b > 75) { out.push(cur); cur = ' '; bytes = 1; }
     cur += ch; bytes += b;
   }
   out.push(cur);
   return out;
 }
 
-function vevent(e){
-  const single = e.start === e.end && /^\d{1,2}:\d{2}$/.test(e.time || '');
-  const lines = [
+function description(e, withSchedule){
+  return [
+    e.summary,
+    withSchedule && timeText(e) ? `Horario: ${timeText(e)}` : '',
+    [ageLabel(e) && `Edad: ${ageLabel(e)}`, e.price && `Precio: ${e.price}`].filter(Boolean).join(' · '),
+    e.tickets ? `Entradas: ${e.tickets}` : '',
+    `Fuente: ${e.source}`,
+    `Más info: ${SITE_URL}#ev-${e.id}`,
+  ].filter(Boolean).join('\n\n');
+}
+
+function vevent(e, uid, timing, desc){
+  return [
     'BEGIN:VEVENT',
-    `UID:${e.id}@leon-con-peques`,
+    `UID:${uid}@leon-con-peques`,
     `DTSTAMP:${compact(UPDATED)}T000000Z`,
     `SUMMARY:${esc(e.title)}`,
     `LOCATION:${esc(e.place)}`,
-  ];
-  if (single) {
-    const [h, mi] = e.time.split(':').map(Number);
-    const hh = String(h).padStart(2, '0'), mm = String(mi).padStart(2, '0');
-    const he = String(Math.min(h + 1, 23)).padStart(2, '0');
-    // Hora local "flotante": se interpreta en la zona horaria del dispositivo (España).
-    lines.push(`DTSTART:${compact(e.start)}T${hh}${mm}00`, `DTEND:${compact(e.start)}T${he}${mm}00`);
-  } else {
-    lines.push(`DTSTART;VALUE=DATE:${compact(e.start)}`, `DTEND;VALUE=DATE:${compact(addDays(e.end, 1))}`);
-  }
-  const desc = [
-    e.summary,
-    e.time && !single ? `Horario: ${e.time}` : '',
-    `Fuente: ${e.source}`,
-    `Más info: ${SITE}#ev-${e.id}`,
-  ].filter(Boolean).join('\n\n');
-  lines.push(`DESCRIPTION:${esc(desc)}`, `URL:${SITE}#ev-${e.id}`);
-  // Aviso: 2 h antes si hay hora; si es de día completo, a las 18:00 del día anterior.
-  lines.push(
+    ...timing,
+    `DESCRIPTION:${esc(desc)}`,
+    `URL:${SITE_URL}#ev-${e.id}`,
+    // Aviso: 2 h antes si hay hora; si es de día completo, a las 18:00 del día anterior.
     'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc(e.title)}`,
-    `TRIGGER:${single ? '-PT2H' : '-PT6H'}`, 'END:VALARM',
-    'END:VEVENT'
-  );
-  return lines;
+    `TRIGGER:${timing[0].includes('VALUE=DATE') ? '-PT6H' : '-PT2H'}`, 'END:VALARM',
+    'END:VEVENT',
+  ];
 }
 
-function calendar(evs, name){
+// Hora local "flotante": se interpreta en la zona horaria del dispositivo (España).
+function sessionTiming(e, s){
+  const t = (hhmm) => hhmm.replace(':', '') + '00';
+  return [`DTSTART:${compact(s.date)}T${t(s.time)}`, `DTEND:${compact(s.date)}T${t(sessionEnd(e, s))}`];
+}
+function allDayTiming(e){
+  return [`DTSTART;VALUE=DATE:${compact(e.start)}`, `DTEND;VALUE=DATE:${compact(addDays(e.end, 1))}`];
+}
+
+function calendar(name, vevents){
   const lines = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Leon con Peques//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     `X-WR-CALNAME:${esc(name)}`,
   ];
-  evs.forEach(e => lines.push(...vevent(e)));
+  vevents.forEach(v => lines.push(...v));
   lines.push('END:VCALENDAR');
   return lines.flatMap(fold).join('\r\n') + '\r\n';
 }
+function emit(path, content){ print(`=====FILE ${path}`); print(content); }
 
 const ids = new Set();
 events.forEach(e => {
   if (!/^[a-z0-9-]+$/.test(e.id)) throw new Error(`id no válido (solo a-z, 0-9 y guiones): "${e.id}"`);
   if (ids.has(e.id)) throw new Error(`id repetido: "${e.id}"`);
   ids.add(e.id);
-  print(`=====FILE ics/${e.id}.ics`);
-  print(calendar([e], e.title));
+  const ss = getSessions(e);
+  ss.forEach(s => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s.date) || !/^\d{1,2}:\d{2}$/.test(s.time)) throw new Error(`sesión no válida en "${e.id}": ${JSON.stringify(s)}`);
+    if (s.date < e.start || s.date > e.end) throw new Error(`sesión fuera de start–end en "${e.id}": ${s.date}`);
+  });
+
+  if (ss.length) {
+    const vs = ss.map(s => vevent(e, `${e.id}-${sessionKey(s)}`, sessionTiming(e, s), description(e, false)));
+    emit(`ics/${e.id}.ics`, calendar(e.title, vs));
+    if (ss.length > 1) ss.forEach((s, i) => emit(`ics/${e.id}-${sessionKey(s)}.ics`, calendar(e.title, [vs[i]])));
+  } else {
+    emit(`ics/${e.id}.ics`, calendar(e.title, [vevent(e, e.id, allDayTiming(e), description(e, true))]));
+  }
 });

@@ -1,5 +1,5 @@
 // Service worker de León con Peques.
-// - Página (HTML) y datos (data.js): primero red, preguntando siempre al servidor si hay
+// - Página (HTML), datos y lógica (data.js, lib.js): primero red, preguntando siempre al servidor si hay
 //   versión nueva (cache: 'no-cache'; GitHub Pages permite reutilizar los ficheros 10 min
 //   sin preguntar). Si no hay conexión o la red tarda más de NET_TIMEOUT_MS, se usa la
 //   última copia guardada y la descarga sigue en segundo plano para la próxima vez.
@@ -7,13 +7,14 @@
 // - Ficheros .ics: directos al servidor (los abre el Calendario del sistema).
 // - Fuentes de Google: se sirve la copia guardada y se refresca en segundo plano.
 // Sube VERSION si cambias la lista de ficheros precargados.
-const VERSION = 'v4';
+const VERSION = 'v5';
 const NET_TIMEOUT_MS = 3000;
 const CACHE = `leon-con-peques-${VERSION}`;
 const PRECACHE = [
   './',
   './index.html',
   './data.js',
+  './lib.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -79,9 +80,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Datos de eventos
-  if (sameOrigin && path.endsWith('/data.js')) {
-    event.respondWith(networkFirst(event, './data.js'));
+  // Datos y lógica compartida
+  if (sameOrigin && (path.endsWith('/data.js') || path.endsWith('/lib.js'))) {
+    event.respondWith(networkFirst(event, '.' + path.slice(path.lastIndexOf('/'))));
     return;
   }
 

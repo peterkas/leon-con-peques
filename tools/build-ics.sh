@@ -6,7 +6,7 @@ JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers
 
 OUT=$(mktemp)
 trap 'rm -f "$OUT"' EXIT
-"$JSC" data.js tools/ics.js > "$OUT"
+"$JSC" data.js lib.js tools/ics.js > "$OUT"
 if grep -q '^Exception' "$OUT"; then cat "$OUT" >&2; exit 1; fi
 
 rm -rf ics && mkdir ics

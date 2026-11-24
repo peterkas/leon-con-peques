@@ -154,6 +154,34 @@
   }
   .notice strong{ color:var(--gold); }
 
+  /* Filtros */
+  .filters{ display:flex; flex-direction:column; gap:8px; margin:4px 0 16px; }
+  .f-row{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .f-label{
+    font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;
+    color:var(--text-muted); min-width:44px;
+  }
+  .chip{
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+    font:inherit; font-size:13px; font-weight:500;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .chip:hover{ border-color:var(--purple); }
+  .chip[aria-pressed="true"]{ background:var(--purple); border-color:var(--purple); color:var(--surface); font-weight:600; }
+  .chip:focus-visible{ outline:2px solid var(--purple); outline-offset:2px; }
+  .filter-note{
+    margin:-10px 0 16px; font-size:13px; color:var(--text-muted);
+  }
+  .linkbtn{
+    border:0; background:none; padding:0; font:inherit; color:var(--purple);
+    text-decoration:underline; cursor:pointer;
+  }
+
   /* Este fin de semana */
   .weekend{
     margin:8px 0 6px;
@@ -340,6 +368,19 @@
   .act:focus-visible{ outline:2px solid var(--purple); outline-offset:2px; }
   .act-alt{ font-size:11.5px; color:var(--text-muted); align-self:center; }
   .act-alt a{ color:inherit; }
+  .cal-one{ display:inline-flex; align-items:center; gap:8px; }
+  .cal-pick summary{ list-style:none; }
+  .cal-pick summary::-webkit-details-marker{ display:none; }
+  .cal-pick[open]{ flex-basis:100%; }
+  .cal-list{ display:flex; flex-direction:column; gap:6px; margin-top:8px; padding-left:4px; }
+  .cal-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .cal-opt{
+    display:inline-flex; padding:6px 12px; border-radius:999px;
+    border:1px solid var(--purple); color:var(--purple); background:var(--surface);
+    font-size:12.5px; font-weight:600; text-decoration:none; font-variant-numeric:tabular-nums;
+  }
+  .tag.info{ background:var(--surface-2); color:var(--text-muted); margin-left:4px; text-transform:none; letter-spacing:0; }
+  .src a{ color:inherit; }
 
   section.recurring{ margin-top:38px; }
   .rec-list{ display:flex; flex-direction:column; gap:10px; }
@@ -436,6 +477,8 @@
 
   <div class="notice" id="staleNotice" role="status" hidden></div>
 
+  <div class="filters" id="filters" role="group" aria-label="Filtros"></div>
+
   <section class="weekend" id="weekend" hidden>
     <h2 class="section-title" id="weekendTitle"></h2>
     <div class="wk-list" id="weekendList"></div>
@@ -451,8 +494,9 @@
   <section class="events">
     <h2 class="section-title">Eventos destacados</h2>
     <p class="section-note">Con fecha confirmada en las fuentes consultadas. Ordenados empezando por el más próximo.</p>
+    <p class="filter-note" id="filterNote" hidden></p>
     <div class="cards" id="cards"></div>
-    <p class="section-note" id="noUpcoming" hidden>No quedan eventos confirmados en este periodo. Pronto se publicará una actualización.</p>
+    <p class="section-note" id="noUpcoming" hidden></p>
     <details class="past-events" id="pastWrap" hidden>
       <summary>Ya celebrados (<span id="pastCount"></span>)</summary>
       <div class="cards" id="pastCards"></div>
@@ -482,62 +526,81 @@
 </div>
 
 <script src="data.js"></script>
+<script src="lib.js"></script>
 <script>
 const CATS = {
-  fiesta:{ label:'Fiesta / feria', color:'var(--gold)' },
-  teatro:{ label:'Teatro / música', color:'var(--garnet)' },
-  taller:{ label:'Talleres / biblioteca', color:'var(--purple)' }
+  fiesta:{ label:'Fiesta / feria', short:'Fiestas', color:'var(--gold)' },
+  teatro:{ label:'Teatro / música', short:'Teatro', color:'var(--garnet)' },
+  taller:{ label:'Talleres / biblioteca', short:'Talleres', color:'var(--purple)' }
 };
+const AGES = ['3','4','5'];
 
-
-function iso(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 // "Hoy" según el reloj del dispositivo, para que el círculo avance solo en la app instalada.
 const _now = new Date();
 const TODAY = iso(_now.getFullYear(), _now.getMonth(), _now.getDate());
 
-const MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const MONTHS_LONG = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-
-function parseISO(s){ const [y,m,d] = s.split('-').map(Number); return {y, m:m-1, d}; }
-function daysBetween(a, b){
-  const A = parseISO(a), B = parseISO(b);
-  return Math.round((Date.UTC(B.y,B.m,B.d) - Date.UTC(A.y,A.m,A.d)) / 86400000);
-}
-function fmtDayMonth(s){ const {m,d} = parseISO(s); return `${d} de ${MONTHS_LONG[m]}`; }
-function fmtFull(s){ return `${fmtDayMonth(s)} de ${parseISO(s).y}`; }
-
-function addDays(s, n){
-  const {y,m,d} = parseISO(s);
-  const t = new Date(Date.UTC(y,m,d) + n*86400000);
-  return iso(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
-}
-function weekdayIdx(s){ const {y,m,d} = parseISO(s); return (new Date(Date.UTC(y,m,d)).getUTCDay() + 6) % 7; } // 0=lun … 6=dom
-const WD_SHORT = ['lun','mar','mié','jue','vie','sáb','dom'];
-function fmtShort(s){ const {m,d} = parseISO(s); return `${WD_SHORT[weekdayIdx(s)]} ${d} ${MONTHS_ES[m]}`; }
-function escapeHTML(str){ return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-// ── Enlaces de cada evento: calendario, mapa, compartir ──
 const UA = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 const IS_APPLE = /iPhone|iPad|iPod|Macintosh/.test(UA);
 const LONG_EVENT_DAYS = 7; // a partir de aquí se trata como "temporada" (mercado, parque…)
-function isLong(e){ return daysBetween(e.start, e.end) >= LONG_EVENT_DAYS; }
-function singleTime(e){ return (e.start === e.end && /^\d{1,2}:\d{2}$/.test(e.time||'')) ? e.time : null; }
-function compact(s){ return s.replace(/-/g,''); }
 
-function googleCalURL(e){
-  const t = singleTime(e);
-  let dates;
-  if(t){
-    const [h,mi] = t.split(':').map(Number);
-    const a = `${compact(e.start)}T${String(h).padStart(2,'0')}${String(mi).padStart(2,'0')}00`;
-    const b = `${compact(e.start)}T${String(h+1).padStart(2,'0')}${String(mi).padStart(2,'0')}00`;
-    dates = `${a}/${b}`;
-  } else {
-    dates = `${compact(e.start)}/${compact(addDays(e.end, 1))}`;
-  }
-  const details = [e.summary, e.time && !t ? `Horario: ${e.time}` : '', `Más info: ${eventURL(e)}`].filter(Boolean).join('\n\n');
+function escapeHTML(str){ return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function inRange(dateStr, a, b){ return dateStr >= a && dateStr <= b; }
+function isPast(e){ return e.end < TODAY; }
+function isOngoing(e){ return e.start < TODAY && e.end >= TODAY; }
+function isLong(e){ return daysBetween(e.start, e.end) >= LONG_EVENT_DAYS; }
+const byStart = (a,b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end);
+
+// ── Filtros (se recuerdan en este dispositivo) ──
+const FILTER_KEY = 'lcp-filters';
+const filters = { age:'all', cat:'all' };
+try {
+  const saved = JSON.parse(localStorage.getItem(FILTER_KEY) || '{}');
+  if(saved.age === 'all' || AGES.includes(saved.age)) filters.age = saved.age;
+  if(saved.cat === 'all' || saved.cat in CATS) filters.cat = saved.cat;
+} catch(_){}
+function saveFilters(){ try { localStorage.setItem(FILTER_KEY, JSON.stringify(filters)); } catch(_){} }
+function isFiltered(){ return filters.age !== 'all' || filters.cat !== 'all'; }
+function visible(e){
+  return (filters.cat === 'all' || e.cat === filters.cat)
+      && (filters.age === 'all' || fitsAge(e, Number(filters.age)));
+}
+function eventsOnDay(dateStr){ return events.filter(e => visible(e) && inRange(dateStr, e.start, e.end)); }
+
+function renderFilters(){
+  const chip = (kind, value, label) =>
+    `<button type="button" class="chip" data-filter="${kind}" data-value="${value}" aria-pressed="${filters[kind] === value}">${label}</button>`;
+  document.getElementById('filters').innerHTML = `
+    <div class="f-row"><span class="f-label">Edad</span>
+      ${chip('age','all','Todas')}${AGES.map(a => chip('age', a, `${a} años`)).join('')}
+    </div>
+    <div class="f-row"><span class="f-label">Tipo</span>
+      ${chip('cat','all','Todo')}${Object.entries(CATS).map(([k,c]) => chip('cat', k, c.short)).join('')}
+    </div>`;
+}
+function setFilter(kind, value){
+  filters[kind] = value;
+  saveFilters();
+  renderAll();
+}
+
+// ── Enlaces: calendario, mapa, compartir ──
+function eventURL(e){
+  const base = (typeof location !== 'undefined' && location.origin && location.origin !== 'null')
+    ? location.origin + location.pathname : SITE_URL;
+  return `${base}#ev-${e.id}`;
+}
+function googleCalURL(e, s){
+  const t = (hhmm) => hhmm.replace(':','') + '00';
+  const dates = s
+    ? `${compact(s.date)}T${t(s.time)}/${compact(s.date)}T${t(sessionEnd(e, s))}`
+    : `${compact(e.start)}/${compact(addDays(e.end, 1))}`;
+  const details = [e.summary, !s && timeText(e) ? `Horario: ${timeText(e)}` : '', `Más info: ${eventURL(e)}`]
+    .filter(Boolean).join('\n\n');
   const q = new URLSearchParams({ action:'TEMPLATE', text:e.title, dates, ctz:'Europe/Madrid', location:e.place, details });
   return `https://calendar.google.com/calendar/render?${q}`;
+}
+function icsPath(e, s){
+  return (s && getSessions(e).length > 1) ? `ics/${e.id}-${sessionKey(s)}.ics` : `ics/${e.id}.ics`;
 }
 function mapsURL(e){
   if(e.mapQuery === null) return null;
@@ -546,24 +609,85 @@ function mapsURL(e){
     ? `https://maps.apple.com/?q=${encodeURIComponent(q)}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
-function eventURL(e){
-  const base = (typeof location !== 'undefined' && location.origin && location.origin !== 'null')
-    ? location.origin + location.pathname : 'https://peterkas.github.io/leon-con-peques/';
-  return `${base}#ev-${e.id}`;
-}
 function shareText(e){
   const when = e.start === e.end ? fmtShort(e.start) : `${fmtShort(e.start)} – ${fmtShort(e.end)}`;
-  return `${e.title}\n📅 ${when}${e.time ? ` · ${e.time}` : ''}\n📍 ${e.place}`;
+  const t = timeText(e);
+  return `${e.title}\n📅 ${when}${t ? ` · ${t}` : ''}\n📍 ${e.place}`;
+}
+const EXT = ' target="_blank" rel="noopener"';
+
+// En iPhone/Mac el .ics abre el Calendario del sistema; en el resto, Google Calendar.
+// Al lado va un enlace pequeño a la otra opción.
+function calLinks(e, s, label, cls){
+  const ics = icsPath(e, s), g = googleCalURL(e, s);
+  const main = IS_APPLE ? `<a class="${cls}" href="${ics}">${label}</a>`
+                        : `<a class="${cls}" href="${escapeHTML(g)}"${EXT}>${label}</a>`;
+  const alt = IS_APPLE ? `<a href="${escapeHTML(g)}"${EXT}>Google</a>` : `<a href="${ics}">.ics</a>`;
+  return `${main}<span class="act-alt">o ${alt}</span>`;
 }
 
-function inRange(dateStr, a, b){ return dateStr >= a && dateStr <= b; }
-function eventsOnDay(dateStr){ return events.filter(e => inRange(dateStr, e.start, e.end)); }
-function isPast(e){ return e.end < TODAY; }
-function isOngoing(e){ return e.start < TODAY && e.end >= TODAY; }
+function renderActions(e){
+  if(isPast(e)) return '';
+  const all = getSessions(e);
+  let cal = '';
+  if(all.length > 1){
+    const upcoming = all.filter(s => s.date >= TODAY);
+    if(upcoming.length){
+      cal = `<details class="cal-pick"><summary class="act">📅 Añadir al calendario ▾</summary>
+        <div class="cal-list">${upcoming.map(s =>
+          `<div class="cal-row">${calLinks(e, s, `${fmtShort(s.date)} · ${s.time}`, 'cal-opt')}</div>`).join('')}
+        </div></details>`;
+    }
+  } else {
+    cal = `<span class="cal-one">${calLinks(e, all[0] || null, '📅 Añadir al calendario', 'act')}</span>`;
+  }
+  const tickets = e.tickets ? `<a class="act" href="${escapeHTML(e.tickets)}"${EXT}>🎟 Entradas</a>` : '';
+  const map = mapsURL(e);
+  const mapBtn = map ? `<a class="act" href="${escapeHTML(map)}"${EXT}>🧭 Cómo llegar</a>` : '';
+  const shareBtn = `<button type="button" class="act" data-share="${escapeHTML(e.id)}">↗ Compartir</button>`;
+  return `<div class="actions">${tickets}${mapBtn}${shareBtn}${cal}</div>`;
+}
 
+function sourceLinks(src){
+  return src.split(' · ').map(part => {
+    const d = part.trim();
+    return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(d) ? `<a href="https://${d}"${EXT}>${d}</a>` : escapeHTML(d);
+  }).join(' · ');
+}
+
+function renderEventCard(e, withAnchor){
+  const {m, d} = parseISO(e.start);
+  const card = document.createElement('div');
+  card.className = 'card' + (isPast(e) ? ' past' : '');
+  if(withAnchor) card.id = `ev-${e.id}`;
+  const status = isPast(e) ? '<span class="tag done">Celebrado</span>'
+               : isOngoing(e) ? '<span class="tag now">En curso</span>' : '';
+  const info = [ageLabel(e), e.price, e.duration ? `${e.duration} min` : '']
+    .filter(Boolean).map(x => `<span class="tag info">${escapeHTML(x)}</span>`).join('');
+  const t = timeText(e);
+  const end = parseISO(e.end);
+  card.innerHTML = `
+    <div class="datebadge">
+      <div class="d">${d}</div>
+      <div class="m">${MONTHS_ES[m]}</div>
+      ${e.end !== e.start ? `<div class="to">→ ${end.d} ${MONTHS_ES[end.m]}</div>` : ''}
+    </div>
+    <div>
+      <span class="tag ${e.cat}">${CATS[e.cat].label}</span>${status}${info}
+      <h3>${e.title}</h3>
+      <div class="meta">${t ? `<span>🕓 ${escapeHTML(t)}</span>` : ''}<span>📍 ${escapeHTML(e.place)}</span></div>
+      <p>${e.summary}</p>
+      <p class="detail">${e.detail}</p>
+      <div class="src">Fuente: ${sourceLinks(e.source)}</div>
+      ${renderActions(e)}
+    </div>`;
+  return card;
+}
+
+// ── Calendario mensual ──
 function buildMonth(year, monthIndex, label){
   const daysInMonth = new Date(year, monthIndex+1, 0).getDate();
-  const firstWeekday = (new Date(year, monthIndex, 1).getDay() + 6) % 7; // 0=Mon
+  const firstWeekday = (new Date(year, monthIndex, 1).getDay() + 6) % 7; // 0=lun
   const wrap = document.createElement('div');
   wrap.className = 'month';
   const h2 = document.createElement('h2');
@@ -571,12 +695,12 @@ function buildMonth(year, monthIndex, label){
   wrap.appendChild(h2);
   const grid = document.createElement('div');
   grid.className = 'grid7';
-  ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(w=>{
+  ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(w => {
     const el = document.createElement('div');
-    el.className='wd'; el.textContent=w; grid.appendChild(el);
+    el.className = 'wd'; el.textContent = w; grid.appendChild(el);
   });
-  for(let i=0;i<firstWeekday;i++){
-    const b = document.createElement('div'); b.className='day blank'; grid.appendChild(b);
+  for(let i=0; i<firstWeekday; i++){
+    const b = document.createElement('div'); b.className = 'day blank'; grid.appendChild(b);
   }
   for(let d=1; d<=daysInMonth; d++){
     const dateStr = iso(year, monthIndex, d);
@@ -587,25 +711,24 @@ function buildMonth(year, monthIndex, label){
     cell.className = 'day'
       + (outOfWindow ? ' out' : '')
       + (!outOfWindow && dateStr < TODAY ? ' past' : '')
-      + (dateStr===TODAY ? ' today' : '')
+      + (dateStr === TODAY ? ' today' : '')
       + (dayEvents.length ? ' has-events' : '');
     cell.dataset.date = dateStr;
     if(!dayEvents.length) cell.tabIndex = -1;
     const num = document.createElement('div');
-    num.className='num'; num.textContent=d;
+    num.className = 'num'; num.textContent = d;
     cell.appendChild(num);
     if(dayEvents.length){
       const marks = document.createElement('div');
-      marks.className='marks';
-      dayEvents.forEach(e=>{
-        const m = document.createElement('div');
-        m.className = 'mk ' + e.cat;
-        marks.appendChild(m);
+      marks.className = 'marks';
+      dayEvents.forEach(e => {
+        const mk = document.createElement('div');
+        mk.className = 'mk ' + e.cat;
+        marks.appendChild(mk);
       });
       cell.appendChild(marks);
-      const names = dayEvents.map(e=>e.title).join(', ');
-      cell.setAttribute('aria-label', `${d} — ${names}. Ver detalle`);
-      cell.addEventListener('click', ()=> openModal(dateStr, dayEvents));
+      cell.setAttribute('aria-label', `${d} — ${dayEvents.map(e => e.title).join(', ')}. Ver detalle`);
+      cell.addEventListener('click', () => openModal(dateStr, dayEvents));
     } else {
       cell.setAttribute('aria-label', String(d));
     }
@@ -615,7 +738,114 @@ function buildMonth(year, monthIndex, label){
   return wrap;
 }
 
-// Cabecera: periodo cubierto y fecha de actualización
+function renderMonths(){
+  const container = document.getElementById('months');
+  container.innerHTML = '';
+  const s = parseISO(WINDOW_START), e = parseISO(WINDOW_END);
+  let y = s.y, m = s.m;
+  while(y < e.y || (y === e.y && m <= e.m)){
+    container.appendChild(buildMonth(y, m, `${MONTHS_LONG[m]} ${y}`));
+    m++; if(m > 11){ m = 0; y++; }
+  }
+}
+
+// ── Lista principal: primero lo próximo; lo ya celebrado, plegado al final ──
+function renderLists(){
+  const allUpcoming = events.filter(e => !isPast(e));
+  const upcoming = allUpcoming.filter(visible).sort(byStart);
+  const past = events.filter(e => isPast(e) && visible(e)).sort(byStart).reverse();
+
+  const cards = document.getElementById('cards');
+  cards.innerHTML = '';
+  upcoming.forEach(e => cards.appendChild(renderEventCard(e, true)));
+
+  const note = document.getElementById('filterNote');
+  note.hidden = !isFiltered();
+  if(isFiltered()){
+    note.innerHTML = `Mostrando ${upcoming.length} de ${allUpcoming.length} eventos próximos · <button type="button" class="linkbtn" data-clear>Quitar filtros</button>`;
+  }
+  const none = document.getElementById('noUpcoming');
+  none.hidden = upcoming.length > 0;
+  none.textContent = isFiltered() && allUpcoming.length
+    ? 'Ningún evento próximo coincide con el filtro.'
+    : 'No quedan eventos confirmados en este periodo. Pronto se publicará una actualización.';
+
+  const pastWrap = document.getElementById('pastWrap');
+  const pastCards = document.getElementById('pastCards');
+  pastCards.innerHTML = '';
+  past.forEach(e => pastCards.appendChild(renderEventCard(e, true)));
+  document.getElementById('pastCount').textContent = past.length;
+  pastWrap.hidden = past.length === 0;
+}
+
+// ── Este fin de semana (u "Hoy domingo") ──
+function renderWeekend(){
+  const section = document.getElementById('weekend');
+  const dow = weekdayIdx(TODAY);
+  let days, title;
+  if(dow <= 4){ const sat = addDays(TODAY, 5 - dow); days = [sat, addDays(sat, 1)]; title = 'Este fin de semana'; }
+  else if(dow === 5){ days = [TODAY, addDays(TODAY, 1)]; title = 'Este fin de semana'; }
+  else { days = [TODAY]; title = 'Hoy domingo'; }
+  days = days.filter(d => inRange(d, WINDOW_START, WINDOW_END));
+  if(!days.length){ section.hidden = true; return; }
+
+  const first = days[0], last = days[days.length-1];
+  const f = parseISO(first), l = parseISO(last);
+  const when = first === last ? `${f.d} ${MONTHS_ES[f.m]}`
+             : f.m === l.m ? `${f.d}–${l.d} ${MONTHS_ES[l.m]}`
+             : `${f.d} ${MONTHS_ES[f.m]} – ${l.d} ${MONTHS_ES[l.m]}`;
+  document.getElementById('weekendTitle').textContent = `${title} · ${when}`;
+
+  // Días del finde en que hay algo: con sesiones, solo los días con función.
+  const coveredDays = (e) => getSessions(e).length
+    ? days.filter(d => getSessions(e).some(s => s.date === d))
+    : days.filter(d => inRange(d, e.start, e.end));
+  const hits = events.filter(e => visible(e) && !isPast(e) && coveredDays(e).length);
+  const shortOnes = hits.filter(e => !isLong(e)).sort(byStart);
+  const longOnes = hits.filter(isLong).sort(byStart);
+
+  const list = document.getElementById('weekendList');
+  list.innerHTML = '';
+  shortOnes.forEach(e => {
+    const covered = coveredDays(e);
+    const dayLabel = covered.map(d => d === TODAY ? 'hoy' : WD_SHORT[weekdayIdx(d)]).join(' y ');
+    const t = timeText(e, covered);
+    const meta = [t && `🕓 ${t}`, `📍 ${e.place}`, ageLabel(e)].filter(Boolean).map(escapeHTML).join(' · ');
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'wk-item';
+    item.innerHTML = `
+      <div class="wk-when">${escapeHTML(dayLabel)}</div>
+      <div>
+        <div class="wk-title">${escapeHTML(e.title)}</div>
+        <div class="wk-meta">${meta}</div>
+      </div>`;
+    item.setAttribute('aria-label', `${dayLabel}: ${e.title}. Ver detalle`);
+    item.addEventListener('click', () => openModal(covered[0], [e]));
+    list.appendChild(item);
+  });
+  const empty = document.getElementById('weekendEmpty');
+  empty.hidden = shortOnes.length > 0;
+  empty.textContent = isFiltered()
+    ? 'No hay planes confirmados para estos días con el filtro actual.'
+    : 'No hay planes confirmados para estos días. Echa un vistazo a la programación habitual, más abajo.';
+
+  const also = document.getElementById('weekendAlso');
+  also.hidden = longOnes.length === 0;
+  if(longOnes.length){
+    also.textContent = `${shortOnes.length ? 'También' : 'Eso sí, siguen'} abiertos: ${longOnes.map(e => e.title).join(' · ')}.`;
+  }
+  section.hidden = false;
+}
+
+function renderAll(){
+  renderFilters();
+  renderWeekend();
+  renderMonths();
+  renderLists();
+}
+
+// ── Cabecera: periodo cubierto y fecha de actualización ──
 (function renderHeader(){
   const s = parseISO(WINDOW_START), e = parseISO(WINDOW_END);
   document.getElementById('range').textContent = s.y === e.y
@@ -637,85 +867,22 @@ function buildMonth(year, monthIndex, label){
   }
 })();
 
-// Un recuadro por cada mes que toca el periodo cubierto
-(function renderMonths(){
-  const container = document.getElementById('months');
-  const s = parseISO(WINDOW_START), e = parseISO(WINDOW_END);
-  let y = s.y, m = s.m;
-  while(y < e.y || (y === e.y && m <= e.m)){
-    container.appendChild(buildMonth(y, m, `${MONTHS_LONG[m]} ${y}`));
-    m++; if(m > 11){ m = 0; y++; }
-  }
-})();
-
 const legend = document.getElementById('legend');
-Object.entries(CATS).forEach(([key,c])=>{
+Object.values(CATS).forEach(c => {
   const s = document.createElement('span');
   s.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.label}`;
   legend.appendChild(s);
 });
 
-function renderActions(e){
-  if(isPast(e)) return '';
-  const ics = `ics/${encodeURIComponent(e.id)}.ics`;
-  const gcal = googleCalURL(e);
-  // En iPhone/Mac el .ics abre el Calendario del sistema; en el resto, Google Calendar.
-  const calPrimary = IS_APPLE
-    ? `<a class="act" href="${ics}">📅 Añadir al calendario</a>`
-    : `<a class="act" href="${escapeHTML(gcal)}" target="_blank" rel="noopener">📅 Añadir al calendario</a>`;
-  const calAlt = IS_APPLE
-    ? `<span class="act-alt">o <a href="${escapeHTML(gcal)}" target="_blank" rel="noopener">Google</a></span>`
-    : `<span class="act-alt">o <a href="${ics}">.ics</a></span>`;
-  const map = mapsURL(e);
-  const mapBtn = map ? `<a class="act" href="${escapeHTML(map)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>` : '';
-  const shareBtn = `<button type="button" class="act" data-share="${escapeHTML(e.id)}">↗ Compartir</button>`;
-  return `<div class="actions">${calPrimary}${mapBtn}${shareBtn}${calAlt}</div>`;
-}
+const recWrap = document.getElementById('recurring');
+recurring.forEach(r => {
+  const el = document.createElement('div');
+  el.className = 'rec-item';
+  el.innerHTML = `<h4>${r.title}</h4><p>${r.desc} · <em>${r.source}</em></p>`;
+  recWrap.appendChild(el);
+});
 
-function renderEventCard(e, withAnchor){
-  const [ys,ms,ds] = e.start.split('-').map(Number);
-  const card = document.createElement('div');
-  card.className = 'card' + (isPast(e) ? ' past' : '');
-  if(withAnchor) card.id = `ev-${e.id}`;
-  const status = isPast(e) ? '<span class="tag done">Celebrado</span>'
-               : isOngoing(e) ? '<span class="tag now">En curso</span>' : '';
-  card.innerHTML = `
-    <div class="datebadge">
-      <div class="d">${ds}</div>
-      <div class="m">${MONTHS_ES[ms-1]}</div>
-      ${e.end!==e.start ? `<div class="to">→ ${Number(e.end.split('-')[2])} ${MONTHS_ES[Number(e.end.split('-')[1])-1]}</div>` : ''}
-    </div>
-    <div>
-      <span class="tag ${e.cat}">${CATS[e.cat].label}</span>${status}
-      <h3>${e.title}</h3>
-      <div class="meta">${e.time ? `<span>🕓 ${e.time}</span>` : ''}<span>📍 ${e.place}</span></div>
-      <p>${e.summary}</p>
-      <p class="detail">${e.detail}</p>
-      <div class="src">Fuente: ${e.source}</div>
-      ${renderActions(e)}
-    </div>`;
-  return card;
-}
-
-// Lista principal: primero lo próximo (y lo que está en curso); lo ya celebrado, plegado al final
-(function renderLists(){
-  const byStart = (a,b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end);
-  const upcoming = events.filter(e => !isPast(e)).sort(byStart);
-  const past = events.filter(isPast).sort(byStart).reverse();
-
-  const cards = document.getElementById('cards');
-  upcoming.forEach(e => cards.appendChild(renderEventCard(e, true)));
-  document.getElementById('noUpcoming').hidden = upcoming.length > 0;
-
-  if(past.length){
-    const pastCards = document.getElementById('pastCards');
-    past.forEach(e => pastCards.appendChild(renderEventCard(e, true)));
-    document.getElementById('pastCount').textContent = past.length;
-    document.getElementById('pastWrap').hidden = false;
-  }
-})();
-
-// --- Modal: tocar un día para ver sus eventos ---
+// ── Modal: tocar un día para ver sus eventos ──
 const backdrop = document.getElementById('modalBackdrop');
 const modalDate = document.getElementById('modalDate');
 const modalCards = document.getElementById('modalCards');
@@ -723,12 +890,10 @@ const modalClose = document.getElementById('modalClose');
 let lastFocused = null;
 
 function fmtLongDate(dateStr){
-  const [y,m,d] = dateStr.split('-').map(Number);
+  const {m, d} = parseISO(dateStr);
   const WD = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
-  const wd = (new Date(y, m-1, d).getDay() + 6) % 7;
-  return `${WD[wd]}, ${d} de ${MONTHS_LONG[m-1]}`;
+  return `${WD[weekdayIdx(dateStr)]}, ${d} de ${MONTHS_LONG[m]}`;
 }
-
 function openModal(dateStr, dayEvents){
   lastFocused = document.activeElement;
   modalDate.textContent = fmtLongDate(dateStr);
@@ -745,99 +910,53 @@ function openModal(dateStr, dayEvents){
   modalClose.focus();
   document.addEventListener('keydown', onModalKeydown);
 }
-
 function closeModal(){
   backdrop.classList.remove('open');
   document.removeEventListener('keydown', onModalKeydown);
   if(lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
 }
-
-function onModalKeydown(ev){
-  if(ev.key === 'Escape') closeModal();
-}
-
+function onModalKeydown(ev){ if(ev.key === 'Escape') closeModal(); }
 modalClose.addEventListener('click', closeModal);
-backdrop.addEventListener('click', (ev)=>{ if(ev.target === backdrop) closeModal(); });
+backdrop.addEventListener('click', (ev) => { if(ev.target === backdrop) closeModal(); });
 
-const recWrap = document.getElementById('recurring');
-recurring.forEach(r=>{
-  const el = document.createElement('div');
-  el.className='rec-item';
-  el.innerHTML = `<h4>${r.title}</h4><p>${r.desc} · <em>${r.source}</em></p>`;
-  recWrap.appendChild(el);
-});
-
-// --- Este fin de semana (o "hoy" si ya es domingo) ---
-(function renderWeekend(){
-  const dow = weekdayIdx(TODAY);
-  let days, title;
-  if(dow <= 4){ const sat = addDays(TODAY, 5 - dow); days = [sat, addDays(sat, 1)]; title = 'Este fin de semana'; }
-  else if(dow === 5){ days = [TODAY, addDays(TODAY, 1)]; title = 'Este fin de semana'; }
-  else { days = [TODAY]; title = 'Hoy domingo'; }
-  days = days.filter(d => inRange(d, WINDOW_START, WINDOW_END));
-  if(!days.length) return;
-
-  const first = days[0], last = days[days.length-1];
-  const f = parseISO(first), l = parseISO(last);
-  const when = first === last ? `${f.d} ${MONTHS_ES[f.m]}`
-             : f.m === l.m ? `${f.d}–${l.d} ${MONTHS_ES[l.m]}`
-             : `${f.d} ${MONTHS_ES[f.m]} – ${l.d} ${MONTHS_ES[l.m]}`;
-  document.getElementById('weekendTitle').textContent = `${title} · ${when}`;
-
-  const byStart = (a,b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end);
-  const hits = events.filter(e => e.start <= last && e.end >= first && !isPast(e));
-  const shortOnes = hits.filter(e => !isLong(e)).sort(byStart);
-  const longOnes = hits.filter(isLong).sort(byStart);
-
-  const list = document.getElementById('weekendList');
-  shortOnes.forEach(e => {
-    const covered = days.filter(d => inRange(d, e.start, e.end));
-    const dayLabel = covered.map(d => d === TODAY ? 'hoy' : WD_SHORT[weekdayIdx(d)]).join(' y ');
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.className = 'wk-item';
-    item.innerHTML = `
-      <div class="wk-when">${escapeHTML(dayLabel)}</div>
-      <div>
-        <div class="wk-title">${escapeHTML(e.title)}</div>
-        <div class="wk-meta">${e.time ? `🕓 ${escapeHTML(e.time)} · ` : ''}📍 ${escapeHTML(e.place)}</div>
-      </div>`;
-    item.setAttribute('aria-label', `${dayLabel}: ${e.title}. Ver detalle`);
-    item.addEventListener('click', () => openModal(covered[0], [e]));
-    list.appendChild(item);
-  });
-  document.getElementById('weekendEmpty').hidden = shortOnes.length > 0;
-
-  if(longOnes.length){
-    const also = document.getElementById('weekendAlso');
-    also.textContent = `${shortOnes.length ? 'También' : 'Eso sí, siguen'} abiertos: ${longOnes.map(e => e.title).join(' · ')}.`;
-    also.hidden = false;
-  }
-  document.getElementById('weekend').hidden = false;
-})();
-
-// --- Compartir (menú nativo; si no existe, copiar al portapapeles) ---
+// ── Clics delegados: filtros, quitar filtros, compartir ──
 document.addEventListener('click', (ev) => {
-  const btn = ev.target && ev.target.closest && ev.target.closest('[data-share]');
+  const t = ev.target;
+  if(!t || !t.closest) return;
+
+  const chip = t.closest('[data-filter]');
+  if(chip){ setFilter(chip.dataset.filter, chip.dataset.value); return; }
+
+  if(t.closest('[data-clear]')){ filters.age = 'all'; filters.cat = 'all'; saveFilters(); renderAll(); return; }
+
+  const btn = t.closest('[data-share]');
   if(!btn) return;
   const e = events.find(x => x.id === btn.dataset.share);
   if(!e) return;
   const text = shareText(e), url = eventURL(e);
   if(navigator.share){
-    navigator.share({ title: e.title, text, url }).catch(()=>{});
+    navigator.share({ title: e.title, text, url }).catch(() => {});
   } else if(navigator.clipboard){
     navigator.clipboard.writeText(`${text}\n${url}`).then(() => {
       const prev = btn.textContent;
       btn.textContent = '✓ Copiado';
       setTimeout(() => { btn.textContent = prev; }, 2000);
-    }).catch(()=>{});
+    }).catch(() => {});
   }
 });
 
-// --- Enlace directo a un evento (#ev-<id>), p. ej. al abrir un plan compartido ---
+renderAll();
+
+// ── Enlace directo a un evento (#ev-<id>), p. ej. al abrir un plan compartido ──
 function focusFromHash(){
   if(typeof location === 'undefined' || !location.hash || !location.hash.startsWith('#ev-')) return;
-  const el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  const id = decodeURIComponent(location.hash.slice(4));
+  let el = document.getElementById(`ev-${id}`);
+  // Si el filtro guardado lo oculta, se quitan los filtros para poder mostrarlo.
+  if(!el && events.some(e => e.id === id) && isFiltered()){
+    filters.age = 'all'; filters.cat = 'all'; saveFilters(); renderAll();
+    el = document.getElementById(`ev-${id}`);
+  }
   if(!el) return;
   const det = el.closest && el.closest('details');
   if(det) det.open = true;
@@ -848,19 +967,19 @@ function focusFromHash(){
 window.addEventListener('hashchange', focusFromHash);
 focusFromHash();
 
-// --- PWA: service worker para uso sin conexión y actualizaciones ---
+// ── PWA: service worker para uso sin conexión y actualizaciones ──
 if('serviceWorker' in navigator){
   const hadController = !!navigator.serviceWorker.controller;
   let swReg = null;
-  window.addEventListener('load', ()=>{
+  window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js', { updateViaCache:'none' })
       .then(r => { swReg = r; })
-      .catch(()=>{});
+      .catch(() => {});
   });
   // Cuando entra en servicio una versión nueva del service worker, recargar una vez
   // (no en la primera instalación, en la que no había uno anterior).
   let reloading = false;
-  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
     if(hadController && !reloading){ reloading = true; location.reload(); }
   });
 
@@ -870,14 +989,14 @@ if('serviceWorker' in navigator){
   // - si no, se comprueba en silencio si hay un service worker nuevo.
   const RELOAD_AFTER_MS = 60 * 60 * 1000;
   let hiddenAt = null;
-  document.addEventListener('visibilitychange', ()=>{
+  document.addEventListener('visibilitychange', () => {
     if(document.visibilityState === 'hidden'){ hiddenAt = Date.now(); return; }
     const n = new Date();
     const nowISO = iso(n.getFullYear(), n.getMonth(), n.getDate());
     if(nowISO !== TODAY || (hiddenAt && Date.now() - hiddenAt > RELOAD_AFTER_MS)){
       location.reload();
     } else if(swReg){
-      swReg.update().catch(()=>{});
+      swReg.update().catch(() => {});
     }
   });
 }

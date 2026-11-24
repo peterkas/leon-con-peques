@@ -2,21 +2,29 @@
 // (además del texto de novedades del pie, en index.html).
 //
 // Campos de cada evento:
-//   id        identificador corto y único (se usa en enlaces y en ics/<id>.ics)
+//   id        identificador corto y único: minúsculas, números y guiones (enlaces e ics/<id>.ics)
 //   title, cat ('fiesta' | 'teatro' | 'taller'), start, end (AAAA-MM-DD)
 //   place     lugar tal como se muestra
 //   mapQuery  (opcional) búsqueda para "Cómo llegar"; null = sin enlace de mapa.
 //             Si falta, se usa "<place>, León".
-//   time      (opcional) "18:00" o texto libre ("sáb 18:00 · dom 12:00", "hora por confirmar")
-//   summary, detail, source
+//   sessions  (opcional) funciones con hora: [{date:'AAAA-MM-DD', time:'HH:MM'}, …].
+//             Cada una se puede añadir al calendario por separado.
+//   time      (opcional, solo si no hay sessions) texto libre: "hora por confirmar"…
+//   duration  (opcional) minutos; para la hora de fin en el calendario (si falta, 60)
+//   age       (opcional) {min, max}; cualquiera de los dos puede faltar. Sin age = edad
+//             no indicada en la fuente (el evento se muestra con cualquier filtro de edad).
+//   price     (opcional) texto: '7 €', 'Gratis', '6 € niños · 3 € adultos'
+//   tickets   (opcional) URL de compra de entradas
+//   summary, detail, source (dominios separados por " · ", se muestran como enlaces)
 //
-// Tras editar este fichero: ./tools/build-ics.sh  (lo ejecuta solo el hook pre-commit)
+// Tras editar este fichero: ./tools/build-ics.sh  (y subir ics/ en el mismo commit)
 
 const events = [
   {
     id:'cuentoreyes', title:'Cuentacuentos: A la caza de Papá Noel y los Reyes Magos', cat:'taller',
     start:'2026-11-28', end:'2026-11-28',
-    place:'Librería Pastor Infantil', time:'12:00',
+    place:'Librería Pastor Infantil',
+    sessions:[{date:'2026-11-28', time:'12:00'}],
     summary:'Sesión de cuentacuentos de Emma S. Varela, dentro de la agenda semanal de planes en familia en León.',
     detail:'Nuevo esta semana (localizado en el post semanal de menudoesleon.com). Misma autora y título que el acto ya conocido del 17 de diciembre en la Biblioteca de Villaquilambre, pero sesión distinta. La fuente no especifica edad recomendada; el formato de cuentacuentos suele encajar con la franja de 3-5 años.',
     source:'menudoesleon.com'
@@ -24,7 +32,9 @@ const events = [
   {
     id:'tallersenet', title:'Taller "El desafío del Senet"', cat:'taller',
     start:'2026-11-28', end:'2026-11-28',
-    place:'Museo Liceo Egipcio', time:'12:00',
+    place:'Museo Liceo Egipcio',
+    sessions:[{date:'2026-11-28', time:'12:00'}],
+    age:{min:4, max:12},
     summary:'Taller familiar en torno al antiguo juego egipcio del Senet.',
     detail:'Nuevo esta semana (localizado en el post semanal de menudoesleon.com). Recomendado de 4 a 12 años; el límite inferior entra en la franja de 3-5 años de este calendario, aunque el superior la supera ampliamente.',
     source:'menudoesleon.com'
@@ -32,7 +42,9 @@ const events = [
   {
     id:'bosqueenllamas', title:'El bosque en llamas', cat:'teatro',
     start:'2026-11-28', end:'2026-11-29',
-    place:'Teatro San Francisco', time:'sáb 18:00 · dom 12:00',
+    place:'Teatro San Francisco',
+    sessions:[{date:'2026-11-28', time:'18:00'}, {date:'2026-11-29', time:'12:00'}],
+    age:{min:5}, price:'7 €', duration:50,
     summary:'Teatro infantil de la compañía asturiana ElektraFiktion: un incendio arrasa un bosque donde conviven el erizo Espín y la zorra Pícara, y el público infantil debe guiar a los animales a un lugar seguro.',
     detail:'Apto a partir de 5 años, duración 50 min, entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es (acceso recuperado tras varias semanas de fallos). Sin cambios.',
     source:'teatrosanfrancisco.es · ctickets.es'
@@ -40,7 +52,9 @@ const events = [
   {
     id:'momia', title:'Menuda momia', cat:'teatro',
     start:'2026-11-29', end:'2026-11-29',
-    place:'Salón de actos del Colegio de Villaobispo (Villaquilambre)', time:'18:00',
+    place:'Salón de actos del Colegio de Villaobispo (Villaquilambre)',
+    sessions:[{date:'2026-11-29', time:'18:00'}],
+    age:{min:3, max:9},
     mapQuery:'Colegio Villaobispo de las Regueras, Villaquilambre, León',
     summary:'Espectáculo de marionetas de Marimba Marionetas, dentro del ciclo "Otoño Cultural" de Villaquilambre.',
     detail:'Recomendado para público infantil de 3 a 9 años y familiar. Reverificado esta semana directamente en la fuente del ciclo "Otoño Cultural". Sin cambios.',
@@ -58,6 +72,7 @@ const events = [
     id:'parquenavideno', title:'Parque navideño infantil — Plaza de Toros', cat:'fiesta',
     start:'2026-12-05', end:'2027-01-07',
     place:'Plaza de Toros de León',
+    age:{min:2, max:12}, price:'6 € niños · 3 € adultos',
     summary:'Castillos hinchables gigantes, toboganes, realidad virtual, piscina de bolas, zona de dibujo y cine navideño, en un espacio cubierto.',
     detail:'Entrada infantil (2-12 años) 6 €, adultos 3 €. Horario según sesión, publicado en criaturasjurasicas.com. Sin cambios respecto a la semana pasada.',
     source:'menudoesleon.com · digitaldeleon.com'
@@ -65,7 +80,9 @@ const events = [
   {
     id:'lasemilla', title:'La semilla', cat:'teatro',
     start:'2026-12-05', end:'2026-12-06',
-    place:'Teatro San Francisco', time:'sáb 17:00 y 18:15 · dom 11:00 y 12:15',
+    place:'Teatro San Francisco',
+    sessions:[{date:'2026-12-05', time:'17:00'}, {date:'2026-12-05', time:'18:15'}, {date:'2026-12-06', time:'11:00'}, {date:'2026-12-06', time:'12:15'}],
+    age:{min:3}, price:'7 €', duration:40,
     summary:'Espectáculo de títeres y objetos de La Canela Títeres (Jaén): una reflexión sobre sembrar y cuidar los potenciales de la infancia, con los límites como ayuda para crecer y el miedo como un obstáculo a superar.',
     detail:'Apto a partir de 3 años, duración 40 min, entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es. Es el espectáculo de este calendario con la edad recomendada más ajustada a la franja de 3-5 años.',
     source:'teatrosanfrancisco.es · ctickets.es'
@@ -73,7 +90,9 @@ const events = [
   {
     id:'soyunoso', title:'Soy un oso', cat:'teatro',
     start:'2026-12-12', end:'2026-12-13',
-    place:'Teatro San Francisco', time:'sáb 18:00 · dom 12:00',
+    place:'Teatro San Francisco',
+    sessions:[{date:'2026-12-12', time:'18:00'}, {date:'2026-12-13', time:'12:00'}],
+    age:{min:4}, price:'7 €', duration:50,
     summary:'Títeres, marionetas y música de Cía. Yheppa Títeres (Asturias). Ursus, un oso, sale de su cueva en primavera y descubre que su bosque ha sido sustituido por una fábrica; sus habitantes le hacen dudar de que sea realmente un oso. Basado en el cuento "El oso que no era", de Frank Tashlin.',
     detail:'Apto a partir de 4 años · duración 50 min · entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es. Sin cambios.',
     source:'teatrosanfrancisco.es · ctickets.es'

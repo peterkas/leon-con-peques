@@ -5,7 +5,7 @@ CALSCALE:GREGORIAN
 METHOD:PUBLISH
 X-WR-CALNAME:Cuentacuentos: A la caza de Papá Noel y los Reyes Magos
 BEGIN:VEVENT
-UID:cuentoreyes@leon-con-peques
+UID:cuentoreyes-20261128-1200@leon-con-peques
 DTSTAMP:20261124T000000Z
 SUMMARY:Cuentacuentos: A la caza de Papá Noel y los Reyes Magos
 LOCATION:Librería Pastor Infantil
