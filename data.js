@@ -17,9 +17,18 @@
 //   tickets   (opcional) URL de compra de entradas
 //   summary, detail, source (dominios separados por " · ", se muestran como enlaces)
 //
-// Tras editar este fichero: ./tools/build-ics.sh  (y subir ics/ en el mismo commit)
+// Tras editar este fichero: ./tools/test.sh  (ics/ no se sube: lo genera GitHub al publicar)
 
 const events = [
+  {
+    id:'encendido', title:'Encendido del alumbrado navideño', cat:'fiesta',
+    start:'2026-11-26', end:'2026-11-26',
+    place:'Plaza de Santo Domingo',
+    sessions:[{date:'2026-11-26', time:'18:30'}],
+    summary:'Acto de encendido de las luces de Navidad en un escenario en la plaza de Santo Domingo, con Café Quijano y villancicos de las Aulas Corales de la Escuela Municipal de Música. Están invitados los escolares de todos los centros de la ciudad, y tras el encendido empiezan a funcionar las atracciones infantiles navideñas.',
+    detail:'Nuevo esta semana (artículo de menudoesleon.com del 18 de noviembre). La fuente no indica edad ni si es gratuito.',
+    source:'menudoesleon.com'
+  },
   {
     id:'cuentoreyes', title:'Cuentacuentos: A la caza de Papá Noel y los Reyes Magos', cat:'taller',
     start:'2026-11-28', end:'2026-11-28',
@@ -45,8 +54,9 @@ const events = [
     place:'Teatro San Francisco',
     sessions:[{date:'2026-11-28', time:'18:00'}, {date:'2026-11-29', time:'12:00'}],
     age:{min:5}, price:'7 €', duration:50,
+    tickets:'https://www.ctickets.es/eventos/entradas-teatro-san-francisco',
     summary:'Teatro infantil de la compañía asturiana ElektraFiktion: un incendio arrasa un bosque donde conviven el erizo Espín y la zorra Pícara, y el público infantil debe guiar a los animales a un lugar seguro.',
-    detail:'Apto a partir de 5 años, duración 50 min, entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es (acceso recuperado tras varias semanas de fallos). Sin cambios.',
+    detail:'Apto a partir de 5 años, duración 50 min, entrada 7 €. Reverificado esta semana en la ficha oficial de cada función (sáb 28, 18:00 · dom 29, 12:00). Sin cambios. Entradas en la página de venta del teatro en ctickets.es.',
     source:'teatrosanfrancisco.es · ctickets.es'
   },
   {
@@ -74,7 +84,7 @@ const events = [
     place:'Plaza de Toros de León',
     age:{min:2, max:12}, price:'6 € niños · 3 € adultos',
     summary:'Castillos hinchables gigantes, toboganes, realidad virtual, piscina de bolas, zona de dibujo y cine navideño, en un espacio cubierto.',
-    detail:'Entrada infantil (2-12 años) 6 €, adultos 3 €. Horario según sesión, publicado en criaturasjurasicas.com. Sin cambios respecto a la semana pasada.',
+    detail:'Entrada infantil (2-12 años) 6 €, adultos 3 €. Horario según sesión, publicado en criaturasjurasicas.com. Fechas (5 dic – 7 ene) reconfirmadas esta semana en la portada de menudoesleon.com.',
     source:'menudoesleon.com · digitaldeleon.com'
   },
   {
@@ -83,8 +93,9 @@ const events = [
     place:'Teatro San Francisco',
     sessions:[{date:'2026-12-05', time:'17:00'}, {date:'2026-12-05', time:'18:15'}, {date:'2026-12-06', time:'11:00'}, {date:'2026-12-06', time:'12:15'}],
     age:{min:3}, price:'7 €', duration:40,
+    tickets:'https://www.ctickets.es/eventos/entradas-teatro-san-francisco',
     summary:'Espectáculo de títeres y objetos de La Canela Títeres (Jaén): una reflexión sobre sembrar y cuidar los potenciales de la infancia, con los límites como ayuda para crecer y el miedo como un obstáculo a superar.',
-    detail:'Apto a partir de 3 años, duración 40 min, entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es. Es el espectáculo de este calendario con la edad recomendada más ajustada a la franja de 3-5 años.',
+    detail:'Apto a partir de 3 años, duración 40 min, entrada 7 €. Reverificado esta semana en las fichas oficiales de las cuatro funciones. Es el espectáculo de este calendario con la edad recomendada más ajustada a la franja de 3-5 años.',
     source:'teatrosanfrancisco.es · ctickets.es'
   },
   {
@@ -93,9 +104,32 @@ const events = [
     place:'Teatro San Francisco',
     sessions:[{date:'2026-12-12', time:'18:00'}, {date:'2026-12-13', time:'12:00'}],
     age:{min:4}, price:'7 €', duration:50,
+    tickets:'https://www.ctickets.es/eventos/entradas-teatro-san-francisco',
     summary:'Títeres, marionetas y música de Cía. Yheppa Títeres (Asturias). Ursus, un oso, sale de su cueva en primavera y descubre que su bosque ha sido sustituido por una fábrica; sus habitantes le hacen dudar de que sea realmente un oso. Basado en el cuento "El oso que no era", de Frank Tashlin.',
-    detail:'Apto a partir de 4 años · duración 50 min · entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es. Sin cambios.',
+    detail:'Apto a partir de 4 años · duración 50 min · entrada 7 €. Fechas y horas reverificadas esta semana en el calendario oficial infantil-familiar de diciembre. Sin cambios.',
     source:'teatrosanfrancisco.es · ctickets.es'
+  },
+  {
+    id:'cuentosnocaducan', title:'Cuentacuentos: Cuentos que no caducan', cat:'taller',
+    start:'2026-12-12', end:'2026-12-12',
+    place:'Biblioteca Pública de León',
+    mapQuery:'Biblioteca Pública de León, Calle Santa Nonia 5, León',
+    sessions:[{date:'2026-12-12', time:'12:00'}],
+    age:{min:5}, price:'Gratis (hasta completar aforo)',
+    summary:'Mañana de cuentos con Las Mudanceras (Irene Mesonero "Polilla" y Judy Judynski, de Cuenta y Crea): cuentos populares poco conocidos, contados con humor, que acercan las tradiciones de la región.',
+    detail:'Nuevo esta semana (agenda cultural de Turismo de Castilla y León). A partir de 5 años; entrada libre hasta completar el aforo. La fuente no indica si hace falta inscripción.',
+    source:'turismocastillayleon.com'
+  },
+  {
+    id:'papanoelmatallana', title:'Papá Noel y la magia de la Navidad', cat:'teatro',
+    start:'2026-12-18', end:'2026-12-18',
+    place:'Casa de las Culturas, Matallana de Torío',
+    mapQuery:'Casa de las Culturas, Avenida Constitución 17, Matallana de Torío',
+    time:'hora por confirmar',
+    duration:50,
+    summary:'Teatro multidisciplinar de Lito Producciones: Papá Noel y los Reyes Magos se unen para descubrir por qué se han perdido las cartas de los niños. Con canciones, juegos y participación del público, sobre la amistad, la igualdad y el trabajo en equipo.',
+    detail:'Nuevo esta semana (agenda cultural de Turismo de Castilla y León). Fuera de León capital, en Matallana de Torío. La fuente no indica hora, edad ni precio.',
+    source:'turismocastillayleon.com'
   },
   {
     id:'papanoelvq', title:'A la caza de Papá Noel', cat:'taller',
@@ -111,21 +145,22 @@ const events = [
     place:'Calles de León (recorrido por anunciar)', time:'hora por confirmar',
     mapQuery:null,
     summary:'Desfile navideño con Papá Noel, carrozas, música, acróbatas, elfos, duendes y renos, dentro de una gira de la Cabalgaza por cinco ciudades de Castilla y León (Valladolid 12, Palencia 13, León 19, Salamanca 20 y Zamora 23 de diciembre).',
-    detail:'Reconfirmado esta semana por una fuente adicional (Digital de León, 16 nov). El horario y el recorrido por las calles de León todavía no se han publicado.',
-    source:'elespanol.com · digitaldeleon.com'
+    detail:'Reconfirmado esta semana en menudoesleon.com (artículo del 15 de noviembre: "sábado 19 de diciembre de 2026"). Horario y recorrido aún sin publicar; en ediciones anteriores salió a las 19:00 de Papalaguinda. Ojo: algún listado de terceros da el 20 de diciembre, pero corresponde a la edición de 2025.',
+    source:'menudoesleon.com · elespanol.com · digitaldeleon.com'
   }
 ];
 
 const recurring = [
   { title:'"Conocemos a la reina Urraca" (taller, Palacio del Conde Luna) — NUEVO esta semana', desc:'Viernes 27 (18:00) y sábado 28 de noviembre (12:00) de 2026. Recomendado de 6 a 8 años, por encima de la franja de 3-5 de este calendario. Parece continuar el ciclo histórico de talleres del Palacio del Conde Luna con una temática distinta a la de años anteriores.', source:'menudoesleon.com (consultado esta semana)' },
   { title:'Teatro San Francisco — ciclo infantil-familiar de enero de 2027 (fuera de ventana, para referencia)', desc:'Papá Zorro (9-10 ene, 4-9 años), Dale (16-17 ene, desde 5 años), Casa (23-24 ene, desde 4 años) y La niña de las trenzas al revés (30-31 ene, desde 4 años). Todas sáb 18:00 / dom 12:00, 7 €. Se incorporarán a la lista principal cuando la ventana móvil las alcance.', source:'teatrosanfrancisco.es (calendario oficial, consultado esta semana)' },
-  { title:'MUSAC — visita familiar (Pistoletto / exposiciones temporales)', desc:'Domingo 6 de diciembre de 2026, 12:00 (la visita del 22 de noviembre ya se ha celebrado). Pensada para niños de 5 a 12 años, por encima de la franja de 3-5 de este calendario. No se ha podido consultar esta semana si existe algún programa "Pequeamigos" o "Diverviaje para Pequeamigos" (error del servidor de musac.es).', source:'musac.es · menudoesleon.com (semanas anteriores)' },
+  { title:'MUSAC — visita familiar (Pistoletto / exposiciones temporales)', desc:'Domingo 6 de diciembre de 2026, 12:00 (la visita del 22 de noviembre ya se ha celebrado). Pensada para niños de 5 a 12 años. Esta semana musac.es carga, pero su página no muestra el programa infantil de diciembre; los programas mensuales en PDF de 2026 (Turismo CyL) mantienen el formato de visitas y talleres gratuitos para 5-12 años con inscripción.', source:'musac.es · turismocastillayleon.com (consultados esta semana)' },
   { title:'Rompamos barreras (taller, Biblioteca Pública de León)', desc:'Miércoles 25 de noviembre y 2 de diciembre de 2026, 19:00, con Mar Bonaque. Edad confirmada: a partir de 6 años, por lo que queda fuera de la franja de 3-5 años de este calendario.', source:'bibliotecas.jcyl.es (consultado en semanas anteriores)' },
   { title:'Villaquilambre — ciclo "Otoño Cultural"', desc:'Confirmado esta semana directamente en la fuente que no hay más funciones de teatro/música en diciembre aparte de "Menuda momia" (29 nov) y "A la caza de Papá Noel" (17 dic), ambas ya en la lista principal.', source:'menudoesleon.com (consultado esta semana)' },
   { title:'"Teatro para compartir en familia" — Casa de Cultura de Armunia', desc:'Ciclo gratuito municipal de teatro/títeres para toda la familia, sábados 18:00. No se ha reverificado esta semana; sin convocatoria de 2026 encontrada hasta ahora.', source:'búsquedas de prensa local (sin convocatoria 2026 confirmada)' },
   { title:'Biblioescena 2026 (Junta de Castilla y León)', desc:'Ciclo regional de teatro infantil/familiar en bibliotecas públicas, con sesiones de 3+, 4+ y 5+ años en otoño de 2026. En búsquedas anteriores todas las sesiones localizadas eran en la Biblioteca Pública de Salamanca, ninguna en León capital. Esta semana se ha localizado un programa similar de cuentos para bebés, pero en Valladolid, no en León.', source:'turismocastillayleon.com' },
-  { title:'Biblioteca Pública de León — agenda de diciembre', desc:'No se ha podido consultar esta semana la página de agenda de bibliotecas.jcyl.es (error de acceso). Se reintentará la próxima semana para localizar cuentacuentos y talleres de diciembre específicos para 3-5 años.', source:'bibliotecas.jcyl.es' },
-  { title:'Agenda de fin de semana (menudoesleon.com, ahoraleon.com)', desc:'El post semanal de menudoesleon.com sigue al día (publicado 18 nov, revisado 23 nov, cubre el 27-29 de noviembre); los dos eventos nuevos de esta semana salen de ahí. ahoraleon.com no ha aportado información adicional relevante esta semana.', source:'menudoesleon.com' }
+  { title:'Biblioteca Pública de León — agenda de diciembre', desc:'La antigua página de agenda de bibliotecas.jcyl.es da error 404, pero la agenda de diciembre aparece en la de Turismo de Castilla y León: "Cuentos que no caducan" (sáb 12 dic, 5+) ya está en la lista principal. "Cuentos que me encuentro", de Pablo Parra (lun 14 dic, 18:30, entrada libre), es a partir de 6 años, por encima de la franja de 3-5.', source:'turismocastillayleon.com (consultado esta semana)' },
+  { title:'Talleres de Navidad de Abacus Innova (ciencia, construcción y creatividad)', desc:'Desde el 23 de diciembre, para niños de 4 a 12 años. La fuente no indica lugar, horario ni precio.', source:'menudoesleon.com (consultado esta semana)' },
+  { title:'Agenda de fin de semana (menudoesleon.com, ahoraleon.com)', desc:'El post semanal de menudoesleon.com sigue al día (publicado 18 nov, revisado 23 nov, cubre el 27-29 de noviembre). Su portada anuncia además el encendido del alumbrado (26 nov, ya en la lista), las atracciones infantiles navideñas (desde el 26 nov, sin detalles) y un musical de Cantajuegos en Bembibre (19 dic), que queda fuera del área de León. ahoraleon.com no ha aportado información adicional relevante esta semana.', source:'menudoesleon.com' }
 ];
 
 // ── Al actualizar cada semana, basta con cambiar estas tres fechas (y los datos de arriba) ──
