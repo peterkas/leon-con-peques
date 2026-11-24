@@ -4,7 +4,8 @@
 // - Iconos y manifiesto: primero caché.
 // - Fuentes de Google: se sirve la copia guardada y se refresca en segundo plano.
 // Sube VERSION si cambias la lista de ficheros precargados.
-const VERSION = 'v1';
+const VERSION = 'v2';
+const NAV_TIMEOUT_MS = 3000;
 const CACHE = `leon-con-peques-${VERSION}`;
 const PRECACHE = [
   './',
@@ -33,17 +34,31 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Navegación: red primero
+  // Navegación: red primero, pero si la red tarda más de NAV_TIMEOUT_MS
+  // (cobertura débil) se muestra la copia guardada. La descarga sigue en
+  // segundo plano y actualiza la copia para la próxima vez.
   if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('./index.html', copy));
-          return res;
-        })
-        .catch(() => caches.match('./index.html'))
-    );
+    const network = fetch(req).then((res) => {
+      if (res.ok) {
+        const copy = res.clone();
+        return caches.open(CACHE).then((c) => c.put('./index.html', copy)).then(() => res);
+      }
+      return res;
+    });
+    event.waitUntil(network.catch(() => {}));
+    event.respondWith(new Promise((resolve) => {
+      let settled = false;
+      const finish = (res) => { if (!settled && res) { settled = true; resolve(res); } };
+      const timer = setTimeout(() => {
+        caches.match('./index.html').then(finish);
+      }, NAV_TIMEOUT_MS);
+      network
+        .then((res) => { clearTimeout(timer); finish(res); })
+        .catch(() => {
+          clearTimeout(timer);
+          caches.match('./index.html').then((c) => finish(c || Response.error()));
+        });
+    }));
     return;
   }
 

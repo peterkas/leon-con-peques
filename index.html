@@ -137,6 +137,23 @@
     font-variant-numeric:tabular-nums;
   }
 
+  .updated{
+    margin-top:8px;
+    font-size:12.5px;
+    color:var(--text-muted);
+  }
+  .notice{
+    margin:0 0 8px;
+    padding:12px 16px;
+    border-radius:12px;
+    background:var(--gold-soft);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:13.5px;
+    line-height:1.5;
+  }
+  .notice strong{ color:var(--gold); }
+
   .legend{
     display:flex; flex-wrap:wrap; gap:18px;
     margin:26px 0 18px;
@@ -191,6 +208,7 @@
   }
   .day.blank{ visibility:hidden; }
   .day.out{ color:var(--text-muted); opacity:0.38; }
+  .day.past{ color:var(--text-muted); opacity:0.5; }
   .day.today .num{
     box-shadow:0 0 0 1.5px var(--today-ring) inset;
     border-radius:50%;
@@ -256,6 +274,19 @@
   .tag.fiesta{ background:var(--gold-soft); color:var(--gold); }
   .tag.teatro{ background:var(--garnet-soft); color:var(--garnet); }
   .tag.taller{ background:var(--purple-soft); color:var(--purple); }
+  .tag.now{ background:var(--purple); color:var(--surface); margin-left:4px; }
+  .tag.done{ background:var(--surface-2); color:var(--text-muted); margin-left:4px; }
+  .card.past{ opacity:0.6; }
+
+  .past-events{ margin-top:16px; }
+  .past-events summary{
+    cursor:pointer;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--text-muted);
+    padding:8px 0;
+  }
+  .past-events .cards{ margin-top:8px; }
   .card p{ margin:0 0 6px; font-size:13.5px; line-height:1.55; color:var(--text); }
   .card .detail{ color:var(--text-muted); font-size:13px; }
   .card .src{ font-size:11.5px; color:var(--text-muted); margin-top:6px; }
@@ -349,8 +380,11 @@
     <div class="eyebrow">León · Planes en familia</div>
     <h1>León con Peques</h1>
     <p class="sub">Calendario de eventos para niños de 3 a 5 años en León capital y alrededores, con lo encontrado hasta ahora para las próximas semanas.</p>
-    <div class="range">📅 24 de noviembre — 24 de diciembre de 2026</div>
+    <div class="range" id="range"></div>
+    <div class="updated" id="updatedLine"></div>
   </header>
+
+  <div class="notice" id="staleNotice" role="status" hidden></div>
 
   <div class="legend" id="legend"></div>
   <p class="section-note" style="margin:-8px 0 18px;">Toca un día marcado para ver el detalle del evento.</p>
@@ -359,8 +393,13 @@
 
   <section class="events">
     <h2 class="section-title">Eventos destacados</h2>
-    <p class="section-note">Con fecha confirmada en las fuentes consultadas.</p>
+    <p class="section-note">Con fecha confirmada en las fuentes consultadas. Ordenados empezando por el más próximo.</p>
     <div class="cards" id="cards"></div>
+    <p class="section-note" id="noUpcoming" hidden>No quedan eventos confirmados en este periodo. Pronto se publicará una actualización.</p>
+    <details class="past-events" id="pastWrap" hidden>
+      <summary>Ya celebrados (<span id="pastCount"></span>)</summary>
+      <div class="cards" id="pastCards"></div>
+    </details>
   </section>
 
   <section class="recurring">
@@ -371,7 +410,7 @@
 
   <footer>
     Fuentes citadas junto a cada evento. Esta semana el Mercado Navideño de León entra en la lista principal: tras una semana de incertidumbre sobre el operador, tres fuentes de prensa independientes confirmaron su traslado a la Plaza Mayor, con apertura prevista el 4 de diciembre. Se han reverificado directamente en origen seis espectáculos de Teatro San Francisco y del ciclo "Otoño Cultural" de Villaquilambre, y se han añadido un cuentacuentos y un taller nuevos encontrados en la agenda semanal de menudoesleon.com.
-    <br>Actualizado el 24 de noviembre de 2026.
+    <br><span id="footerUpdated"></span>
   </footer>
 </div>
 
@@ -487,16 +526,32 @@ const recurring = [
   { title:'Agenda de fin de semana (menudoesleon.com, ahoraleon.com)', desc:'El post semanal de menudoesleon.com sigue al día (publicado 18 nov, revisado 23 nov, cubre el 27-29 de noviembre); los dos eventos nuevos de esta semana salen de ahí. ahoraleon.com no ha aportado información adicional relevante esta semana.', source:'menudoesleon.com' }
 ];
 
-const WINDOW_START = '2026-11-24';
-const WINDOW_END   = '2026-12-24';
+// ── Al actualizar cada semana, basta con cambiar estas tres fechas (y los datos de arriba) ──
+const WINDOW_START = '2026-11-24';   // primer día del periodo cubierto
+const WINDOW_END   = '2026-12-24';   // último día del periodo cubierto
+const UPDATED      = '2026-11-24';   // fecha de la última revisión de fuentes
+const STALE_AFTER_DAYS = 7;          // a partir de cuántos días se avisa de que los datos son antiguos
 
 function iso(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 // "Hoy" según el reloj del dispositivo, para que el círculo avance solo en la app instalada.
 const _now = new Date();
 const TODAY = iso(_now.getFullYear(), _now.getMonth(), _now.getDate());
 
+const MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MONTHS_LONG = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function parseISO(s){ const [y,m,d] = s.split('-').map(Number); return {y, m:m-1, d}; }
+function daysBetween(a, b){
+  const A = parseISO(a), B = parseISO(b);
+  return Math.round((Date.UTC(B.y,B.m,B.d) - Date.UTC(A.y,A.m,A.d)) / 86400000);
+}
+function fmtDayMonth(s){ const {m,d} = parseISO(s); return `${d} de ${MONTHS_LONG[m]}`; }
+function fmtFull(s){ return `${fmtDayMonth(s)} de ${parseISO(s).y}`; }
+
 function inRange(dateStr, a, b){ return dateStr >= a && dateStr <= b; }
 function eventsOnDay(dateStr){ return events.filter(e => inRange(dateStr, e.start, e.end)); }
+function isPast(e){ return e.end < TODAY; }
+function isOngoing(e){ return e.start < TODAY && e.end >= TODAY; }
 
 function buildMonth(year, monthIndex, label){
   const daysInMonth = new Date(year, monthIndex+1, 0).getDate();
@@ -523,6 +578,7 @@ function buildMonth(year, monthIndex, label){
     cell.type = 'button';
     cell.className = 'day'
       + (outOfWindow ? ' out' : '')
+      + (!outOfWindow && dateStr < TODAY ? ' past' : '')
       + (dateStr===TODAY ? ' today' : '')
       + (dayEvents.length ? ' has-events' : '');
     cell.dataset.date = dateStr;
@@ -551,8 +607,38 @@ function buildMonth(year, monthIndex, label){
   return wrap;
 }
 
-document.getElementById('months').appendChild(buildMonth(2026, 10, 'Noviembre 2026'));
-document.getElementById('months').appendChild(buildMonth(2026, 11, 'Diciembre 2026'));
+// Cabecera: periodo cubierto y fecha de actualización
+(function renderHeader(){
+  const s = parseISO(WINDOW_START), e = parseISO(WINDOW_END);
+  document.getElementById('range').textContent = s.y === e.y
+    ? `📅 ${fmtDayMonth(WINDOW_START)} — ${fmtFull(WINDOW_END)}`
+    : `📅 ${fmtFull(WINDOW_START)} — ${fmtFull(WINDOW_END)}`;
+
+  const age = daysBetween(UPDATED, TODAY);
+  const ageText = age <= 0 ? 'hoy' : age === 1 ? 'ayer' : `hace ${age} días`;
+  document.getElementById('updatedLine').textContent = `Actualizado ${ageText} (${fmtFull(UPDATED)})`;
+  document.getElementById('footerUpdated').textContent = `Actualizado el ${fmtFull(UPDATED)}.`;
+
+  const notice = document.getElementById('staleNotice');
+  if(TODAY > WINDOW_END){
+    notice.innerHTML = `<strong>Calendario pendiente de actualizar.</strong> Cubría hasta el ${fmtDayMonth(WINDOW_END)} y todavía no hay una versión nueva. Lo que ves puede estar incompleto.`;
+    notice.hidden = false;
+  } else if(age >= STALE_AFTER_DAYS){
+    notice.innerHTML = `<strong>Datos de ${ageText}.</strong> Algún horario o evento puede haber cambiado; conviene confirmarlo en la fuente antes de ir.`;
+    notice.hidden = false;
+  }
+})();
+
+// Un recuadro por cada mes que toca el periodo cubierto
+(function renderMonths(){
+  const container = document.getElementById('months');
+  const s = parseISO(WINDOW_START), e = parseISO(WINDOW_END);
+  let y = s.y, m = s.m;
+  while(y < e.y || (y === e.y && m <= e.m)){
+    container.appendChild(buildMonth(y, m, `${MONTHS_LONG[m]} ${y}`));
+    m++; if(m > 11){ m = 0; y++; }
+  }
+})();
 
 const legend = document.getElementById('legend');
 Object.entries(CATS).forEach(([key,c])=>{
@@ -561,12 +647,12 @@ Object.entries(CATS).forEach(([key,c])=>{
   legend.appendChild(s);
 });
 
-const MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-
 function renderEventCard(e){
   const [ys,ms,ds] = e.start.split('-').map(Number);
   const card = document.createElement('div');
-  card.className='card';
+  card.className = 'card' + (isPast(e) ? ' past' : '');
+  const status = isPast(e) ? '<span class="tag done">Celebrado</span>'
+               : isOngoing(e) ? '<span class="tag now">En curso</span>' : '';
   card.innerHTML = `
     <div class="datebadge">
       <div class="d">${ds}</div>
@@ -574,7 +660,7 @@ function renderEventCard(e){
       ${e.end!==e.start ? `<div class="to">→ ${Number(e.end.split('-')[2])} ${MONTHS_ES[Number(e.end.split('-')[1])-1]}</div>` : ''}
     </div>
     <div>
-      <span class="tag ${e.cat}">${CATS[e.cat].label}</span>
+      <span class="tag ${e.cat}">${CATS[e.cat].label}</span>${status}
       <h3>${e.title}</h3>
       <div class="meta">${e.time ? `<span>🕓 ${e.time}</span>` : ''}<span>📍 ${e.place}</span></div>
       <p>${e.summary}</p>
@@ -584,8 +670,23 @@ function renderEventCard(e){
   return card;
 }
 
-const cards = document.getElementById('cards');
-events.forEach(e=> cards.appendChild(renderEventCard(e)));
+// Lista principal: primero lo próximo (y lo que está en curso); lo ya celebrado, plegado al final
+(function renderLists(){
+  const byStart = (a,b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end);
+  const upcoming = events.filter(e => !isPast(e)).sort(byStart);
+  const past = events.filter(isPast).sort(byStart).reverse();
+
+  const cards = document.getElementById('cards');
+  upcoming.forEach(e => cards.appendChild(renderEventCard(e)));
+  document.getElementById('noUpcoming').hidden = upcoming.length > 0;
+
+  if(past.length){
+    const pastCards = document.getElementById('pastCards');
+    past.forEach(e => pastCards.appendChild(renderEventCard(e)));
+    document.getElementById('pastCount').textContent = past.length;
+    document.getElementById('pastWrap').hidden = false;
+  }
+})();
 
 // --- Modal: tocar un día para ver sus eventos ---
 const backdrop = document.getElementById('modalBackdrop');
@@ -598,7 +699,6 @@ function fmtLongDate(dateStr){
   const [y,m,d] = dateStr.split('-').map(Number);
   const WD = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
   const wd = (new Date(y, m-1, d).getDay() + 6) % 7;
-  const MONTHS_LONG = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   return `${WD[wd]}, ${d} de ${MONTHS_LONG[m-1]}`;
 }
 

@@ -20,6 +20,6 @@ Calendario de planes para niños de 3 a 5 años en León capital y alrededores, 
 
 ## Actualizar el calendario
 
-1. Edita los arrays `events` y `recurring`, `WINDOW_START`/`WINDOW_END`, el rango de la cabecera y el pie en `index.html`.
+1. En `index.html`, edita los arrays `events` y `recurring`, las fechas `WINDOW_START`, `WINDOW_END` y `UPDATED`, y el texto de novedades del pie. La cabecera, los meses del calendario y la fecha de actualización se generan solos a partir de esas fechas.
 2. Haz commit y push a `main`. GitHub Pages publica en uno o dos minutos.
 3. La app instalada carga la versión nueva la próxima vez que se abra con conexión.
