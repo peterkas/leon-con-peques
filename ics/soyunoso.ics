@@ -1,0 +1,28 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Leon con Peques//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Soy un oso
+BEGIN:VEVENT
+UID:soyunoso@leon-con-peques
+DTSTAMP:20261124T000000Z
+SUMMARY:Soy un oso
+LOCATION:Teatro San Francisco
+DTSTART;VALUE=DATE:20261212
+DTEND;VALUE=DATE:20261214
+DESCRIPTION:Títeres\, marionetas y música de Cía. Yheppa Títeres (Astur
+ ias). Ursus\, un oso\, sale de su cueva en primavera y descubre que su bos
+ que ha sido sustituido por una fábrica\; sus habitantes le hacen dudar de
+  que sea realmente un oso. Basado en el cuento "El oso que no era"\, de Fr
+ ank Tashlin.\n\nHorario: sáb 18:00 · dom 12:00\n\nFuente: teatrosanfranc
+ isco.es · ctickets.es\n\nMás info: https://peterkas.github.io/leon-con-p
+ eques/#ev-soyunoso
+URL:https://peterkas.github.io/leon-con-peques/#ev-soyunoso
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Soy un oso
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

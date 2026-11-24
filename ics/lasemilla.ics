@@ -1,0 +1,27 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Leon con Peques//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:La semilla
+BEGIN:VEVENT
+UID:lasemilla@leon-con-peques
+DTSTAMP:20261124T000000Z
+SUMMARY:La semilla
+LOCATION:Teatro San Francisco
+DTSTART;VALUE=DATE:20261205
+DTEND;VALUE=DATE:20261207
+DESCRIPTION:Espectáculo de títeres y objetos de La Canela Títeres (Jaén
+ ): una reflexión sobre sembrar y cuidar los potenciales de la infancia\, 
+ con los límites como ayuda para crecer y el miedo como un obstáculo a su
+ perar.\n\nHorario: sáb 17:00 y 18:15 · dom 11:00 y 12:15\n\nFuente: teat
+ rosanfrancisco.es · ctickets.es\n\nMás info: https://peterkas.github.io/
+ leon-con-peques/#ev-lasemilla
+URL:https://peterkas.github.io/leon-con-peques/#ev-lasemilla
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:La semilla
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

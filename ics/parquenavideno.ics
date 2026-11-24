@@ -1,0 +1,25 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Leon con Peques//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Parque navideño infantil — Plaza de Toros
+BEGIN:VEVENT
+UID:parquenavideno@leon-con-peques
+DTSTAMP:20261124T000000Z
+SUMMARY:Parque navideño infantil — Plaza de Toros
+LOCATION:Plaza de Toros de León
+DTSTART;VALUE=DATE:20261205
+DTEND;VALUE=DATE:20270108
+DESCRIPTION:Castillos hinchables gigantes\, toboganes\, realidad virtual\, 
+ piscina de bolas\, zona de dibujo y cine navideño\, en un espacio cubiert
+ o.\n\nFuente: menudoesleon.com · digitaldeleon.com\n\nMás info: https://
+ peterkas.github.io/leon-con-peques/#ev-parquenavideno
+URL:https://peterkas.github.io/leon-con-peques/#ev-parquenavideno
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Parque navideño infantil — Plaza de Toros
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+END:VCALENDAR
