@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>León con Peques</title>
+<meta name="description" content="Calendario de planes para niños de 3 a 5 años en León capital y alrededores.">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F5F1F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A1420" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="León Peques">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+  :root{
+    color-scheme:light;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    --bg:#F5F1F6;
+    --surface:#FFFFFF;
+    --surface-2:#EDE5F0;
+    --text:#251C2C;
+    --text-muted:#6E6178;
+    --border:#DED2E3;
+    --purple:#5A2568;
+    --purple-soft:#EFE1F2;
+    --gold:#9C6E1F;
+    --gold-soft:#F3E6C8;
+    --garnet:#8C2F39;
+    --garnet-soft:#F3DEE0;
+    --today-ring:#251C2C;
+    --shadow: 0 1px 2px rgba(37,28,44,0.06), 0 8px 24px -12px rgba(37,28,44,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --bg:#1A1420;
+      --surface:#241B2B;
+      --surface-2:#2E2236;
+      --text:#F2EAF4;
+      --text-muted:#B4A6BC;
+      --border:#3B2D44;
+      --purple:#C79BD6;
+      --purple-soft:#3A2944;
+      --gold:#E3B75B;
+      --gold-soft:#40331C;
+      --garnet:#E39299;
+      --garnet-soft:#452429;
+      --today-ring:#F2EAF4;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#1A1420;
+    --surface:#241B2B;
+    --surface-2:#2E2236;
+    --text:#F2EAF4;
+    --text-muted:#B4A6BC;
+    --border:#3B2D44;
+    --purple:#C79BD6;
+    --purple-soft:#3A2944;
+    --gold:#E3B75B;
+    --gold-soft:#40331C;
+    --garnet:#E39299;
+    --garnet-soft:#452429;
+    --today-ring:#F2EAF4;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box;}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+  html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,'Segoe UI',sans-serif;
+    font-size:14px;
+    padding:0 max(20px, env(safe-area-inset-right,0px)) 64px max(20px, env(safe-area-inset-left,0px));
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{ max-width:980px; margin:0 auto; }
+
+  .checker{
+    height:14px;
+    margin:0 -20px 0;
+    background-image:
+      conic-gradient(from 90deg at 1px 1px,
+        var(--purple) 90deg, var(--gold) 90deg 180deg,
+        var(--garnet) 180deg 270deg, var(--purple) 270deg);
+    background-size: 28px 28px;
+    opacity:0.85;
+  }
+
+  header{ padding:36px 0 28px; }
+  .eyebrow{
+    font-size:12.5px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--purple);
+  }
+  h1{
+    font-family:'Fraunces',Georgia,serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(32px,5vw,48px);
+    line-height:1.05;
+    margin:8px 0 10px;
+    text-wrap:balance;
+  }
+  .sub{
+    font-size:16px;
+    color:var(--text-muted);
+    max-width:56ch;
+    line-height:1.55;
+    margin:0;
+  }
+  .range{
+    display:inline-flex; align-items:center; gap:8px;
+    margin-top:16px;
+    font-size:13.5px;
+    color:var(--text);
+    background:var(--surface);
+    border:1px solid var(--border);
+    padding:7px 14px;
+    border-radius:999px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:18px;
+    margin:26px 0 18px;
+    font-size:13px;
+    color:var(--text-muted);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:7px; }
+  .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+
+  .months{
+    display:grid; grid-template-columns:1fr 1fr; gap:24px;
+  }
+  @media (max-width:680px){ .months{ grid-template-columns:1fr; } }
+
+  .month{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px 16px 20px;
+    box-shadow:var(--shadow);
+  }
+  .month h2{
+    font-family:'Fraunces',Georgia,serif;
+    font-weight:600;
+    font-size:19px;
+    margin:0 0 14px;
+    text-transform:capitalize;
+  }
+  .grid7{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+  }
+  .wd{
+    font-size:10.5px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--text-muted); text-align:center; padding-bottom:4px;
+  }
+  .day{
+    position:relative;
+    aspect-ratio:1/1;
+    border-radius:8px;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    padding:4px 2px 2px;
+    font-size:12px;
+    font-family:inherit;
+    font-variant-numeric:tabular-nums;
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--text);
+    cursor:default;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .day.blank{ visibility:hidden; }
+  .day.out{ color:var(--text-muted); opacity:0.38; }
+  .day.today .num{
+    box-shadow:0 0 0 1.5px var(--today-ring) inset;
+    border-radius:50%;
+  }
+  .day.has-events{ cursor:pointer; }
+  .day.has-events:hover,
+  .day.has-events:focus-visible{
+    background:var(--surface-2);
+    border-color:var(--border);
+  }
+  .day.has-events:focus-visible{ outline:2px solid var(--purple); outline-offset:1px; }
+  .num{
+    width:19px; height:19px; display:flex; align-items:center; justify-content:center;
+    border-radius:50%; font-weight:600;
+  }
+  .marks{ display:flex; gap:2px; margin-top:3px; flex-wrap:wrap; justify-content:center; }
+  .mk{ width:5px; height:5px; border-radius:50%; }
+  .mk.fiesta{ background:var(--gold); }
+  .mk.teatro{ background:var(--garnet); }
+  .mk.taller{ background:var(--purple); }
+
+  section.events{ margin-top:40px; }
+  .section-title{
+    font-family:'Fraunces',Georgia,serif;
+    font-weight:600;
+    font-size:22px;
+    margin:0 0 4px;
+  }
+  .section-note{
+    color:var(--text-muted); font-size:13.5px; margin:0 0 20px;
+  }
+
+  .cards{ display:flex; flex-direction:column; gap:12px; }
+  .card{
+    display:grid;
+    grid-template-columns:78px 1fr;
+    gap:16px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px 18px;
+    box-shadow:var(--shadow);
+  }
+  @media (max-width:520px){ .card{ grid-template-columns:56px 1fr; } }
+  .datebadge{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:10px;
+    padding:8px 4px;
+    text-align:center;
+    background:var(--surface-2);
+  }
+  .datebadge .d{ font-family:'Fraunces',Georgia,serif; font-size:22px; font-weight:600; line-height:1; }
+  .datebadge .m{ font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-top:3px;}
+  .datebadge .to{ font-size:9.5px; color:var(--text-muted); margin-top:2px; }
+
+  .card h3{ font-size:16.5px; margin:0 0 4px; font-weight:700; }
+  .meta{ display:flex; flex-wrap:wrap; gap:10px; font-size:12.5px; color:var(--text-muted); margin-bottom:7px; }
+  .tag{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;
+    padding:2px 8px; border-radius:999px;
+  }
+  .tag.fiesta{ background:var(--gold-soft); color:var(--gold); }
+  .tag.teatro{ background:var(--garnet-soft); color:var(--garnet); }
+  .tag.taller{ background:var(--purple-soft); color:var(--purple); }
+  .card p{ margin:0 0 6px; font-size:13.5px; line-height:1.55; color:var(--text); }
+  .card .detail{ color:var(--text-muted); font-size:13px; }
+  .card .src{ font-size:11.5px; color:var(--text-muted); margin-top:6px; }
+
+  section.recurring{ margin-top:38px; }
+  .rec-list{ display:flex; flex-direction:column; gap:10px; }
+  .rec-item{
+    border:1px dashed var(--border);
+    border-radius:12px;
+    padding:13px 16px;
+    background:var(--surface);
+  }
+  .rec-item h4{ margin:0 0 3px; font-size:14.5px; }
+  .rec-item p{ margin:0; font-size:13px; color:var(--text-muted); line-height:1.5; }
+
+  footer{
+    margin-top:44px;
+    padding-top:18px;
+    border-top:1px solid var(--border);
+    font-size:12px;
+    color:var(--text-muted);
+    line-height:1.6;
+  }
+
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(20,14,24,0.44);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:0;
+    z-index:50;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.18s ease;
+  }
+  .modal-backdrop.open{ opacity:1; pointer-events:auto; }
+  @media (min-width:640px){
+    .modal-backdrop{ align-items:center; padding:24px; }
+  }
+  .modal{
+    background:var(--surface);
+    width:100%;
+    max-width:520px;
+    max-height:86vh;
+    overflow-y:auto;
+    border-radius:20px 20px 0 0;
+    border:1px solid var(--border);
+    box-shadow:var(--shadow);
+    padding:22px 20px calc(26px + env(safe-area-inset-bottom,0px));
+    transform:translateY(16px);
+    transition:transform 0.18s ease;
+  }
+  .modal-backdrop.open .modal{ transform:translateY(0); }
+  @media (min-width:640px){
+    .modal{ border-radius:18px; padding-bottom:26px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .modal-backdrop, .modal{ transition:none; }
+  }
+  .modal-head{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    margin-bottom:14px;
+  }
+  .modal-date{
+    font-family:'Fraunces',Georgia,serif;
+    font-weight:600;
+    font-size:20px;
+    text-transform:capitalize;
+  }
+  .modal-close{
+    flex:none;
+    width:32px; height:32px;
+    border-radius:50%;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text);
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .modal-close:hover{ background:var(--purple-soft); }
+  .modal-close:focus-visible{ outline:2px solid var(--purple); outline-offset:2px; }
+  .modal-cards{ display:flex; flex-direction:column; gap:12px; }
+  .modal-empty{ color:var(--text-muted); font-size:13.5px; }
+</style>
+</head>
+<body>
+
+<div class="checker"></div>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">León · Planes en familia</div>
+    <h1>León con Peques</h1>
+    <p class="sub">Calendario de eventos para niños de 3 a 5 años en León capital y alrededores, con lo encontrado hasta ahora para las próximas semanas.</p>
+    <div class="range">📅 24 de noviembre — 24 de diciembre de 2026</div>
+  </header>
+
+  <div class="legend" id="legend"></div>
+  <p class="section-note" style="margin:-8px 0 18px;">Toca un día marcado para ver el detalle del evento.</p>
+
+  <div class="months" id="months"></div>
+
+  <section class="events">
+    <h2 class="section-title">Eventos destacados</h2>
+    <p class="section-note">Con fecha confirmada en las fuentes consultadas.</p>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="recurring">
+    <h2 class="section-title">Programación habitual, fecha por confirmar</h2>
+    <p class="section-note">Estos sitios tienen actividad infantil recurrente, pero sus calendarios aún no estaban publicados al buscar (o encajan solo parcialmente con la franja de 3-5 años).</p>
+    <div class="rec-list" id="recurring"></div>
+  </section>
+
+  <footer>
+    Fuentes citadas junto a cada evento. Esta semana el Mercado Navideño de León entra en la lista principal: tras una semana de incertidumbre sobre el operador, tres fuentes de prensa independientes confirmaron su traslado a la Plaza Mayor, con apertura prevista el 4 de diciembre. Se han reverificado directamente en origen seis espectáculos de Teatro San Francisco y del ciclo "Otoño Cultural" de Villaquilambre, y se han añadido un cuentacuentos y un taller nuevos encontrados en la agenda semanal de menudoesleon.com.
+    <br>Actualizado el 24 de noviembre de 2026.
+  </footer>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalDate">
+    <div class="modal-head">
+      <div class="modal-date" id="modalDate"></div>
+      <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-cards" id="modalCards"></div>
+  </div>
+</div>
+
+<script>
+const CATS = {
+  fiesta:{ label:'Fiesta / feria', color:'var(--gold)' },
+  teatro:{ label:'Teatro / música', color:'var(--garnet)' },
+  taller:{ label:'Talleres / biblioteca', color:'var(--purple)' }
+};
+
+const events = [
+  {
+    id:'cuentoreyes', title:'Cuentacuentos: A la caza de Papá Noel y los Reyes Magos', cat:'taller',
+    start:'2026-11-28', end:'2026-11-28',
+    place:'Librería Pastor Infantil', time:'12:00',
+    summary:'Sesión de cuentacuentos de Emma S. Varela, dentro de la agenda semanal de planes en familia en León.',
+    detail:'Nuevo esta semana (localizado en el post semanal de menudoesleon.com). Misma autora y título que el acto ya conocido del 17 de diciembre en la Biblioteca de Villaquilambre, pero sesión distinta. La fuente no especifica edad recomendada; el formato de cuentacuentos suele encajar con la franja de 3-5 años.',
+    source:'menudoesleon.com'
+  },
+  {
+    id:'tallersenet', title:'Taller "El desafío del Senet"', cat:'taller',
+    start:'2026-11-28', end:'2026-11-28',
+    place:'Museo Liceo Egipcio', time:'12:00',
+    summary:'Taller familiar en torno al antiguo juego egipcio del Senet.',
+    detail:'Nuevo esta semana (localizado en el post semanal de menudoesleon.com). Recomendado de 4 a 12 años; el límite inferior entra en la franja de 3-5 años de este calendario, aunque el superior la supera ampliamente.',
+    source:'menudoesleon.com'
+  },
+  {
+    id:'bosqueenllamas', title:'El bosque en llamas', cat:'teatro',
+    start:'2026-11-28', end:'2026-11-29',
+    place:'Teatro San Francisco', time:'sáb 18:00 · dom 12:00',
+    summary:'Teatro infantil de la compañía asturiana ElektraFiktion: un incendio arrasa un bosque donde conviven el erizo Espín y la zorra Pícara, y el público infantil debe guiar a los animales a un lugar seguro.',
+    detail:'Apto a partir de 5 años, duración 50 min, entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es (acceso recuperado tras varias semanas de fallos). Sin cambios.',
+    source:'teatrosanfrancisco.es · ctickets.es'
+  },
+  {
+    id:'momia', title:'Menuda momia', cat:'teatro',
+    start:'2026-11-29', end:'2026-11-29',
+    place:'Salón de actos del Colegio de Villaobispo (Villaquilambre)', time:'18:00',
+    summary:'Espectáculo de marionetas de Marimba Marionetas, dentro del ciclo "Otoño Cultural" de Villaquilambre.',
+    detail:'Recomendado para público infantil de 3 a 9 años y familiar. Reverificado esta semana directamente en la fuente del ciclo "Otoño Cultural". Sin cambios.',
+    source:'menudoesleon.com · ileon.eldiario.es · heraldodeleon.es'
+  },
+  {
+    id:'mercadonavideno', title:'Mercado Navideño de León', cat:'fiesta',
+    start:'2026-12-04', end:'2027-01-06',
+    place:'Plaza Mayor de León',
+    summary:'Mercado de artesanía navideña con casetas distribuidas en forma de cruz e iluminación de "cielo estrellado".',
+    detail:'Entra esta semana en la lista principal. Tras una amenaza de cancelación a principios de noviembre (renuncia del operador adjudicatario, dudas de los artesanos sobre el traslado), tres fuentes de prensa independientes confirmaron entre el 18 y el 20 de noviembre la ubicación en la Plaza Mayor, el diseño y la apertura prevista el 4 de diciembre, con cierre hacia el 6 de enero. No se ha localizado una resolución municipal oficial.',
+    source:'diariodeleon.es · leonoticias.com · leon24horas.net · digitaldeleon.com'
+  },
+  {
+    id:'parquenavideno', title:'Parque navideño infantil — Plaza de Toros', cat:'fiesta',
+    start:'2026-12-05', end:'2027-01-07',
+    place:'Plaza de Toros de León',
+    summary:'Castillos hinchables gigantes, toboganes, realidad virtual, piscina de bolas, zona de dibujo y cine navideño, en un espacio cubierto.',
+    detail:'Entrada infantil (2-12 años) 6 €, adultos 3 €. Horario según sesión, publicado en criaturasjurasicas.com. Sin cambios respecto a la semana pasada.',
+    source:'menudoesleon.com · digitaldeleon.com'
+  },
+  {
+    id:'lasemilla', title:'La semilla', cat:'teatro',
+    start:'2026-12-05', end:'2026-12-06',
+    place:'Teatro San Francisco', time:'sáb 17:00 y 18:15 · dom 11:00 y 12:15',
+    summary:'Espectáculo de títeres y objetos de La Canela Títeres (Jaén): una reflexión sobre sembrar y cuidar los potenciales de la infancia, con los límites como ayuda para crecer y el miedo como un obstáculo a superar.',
+    detail:'Apto a partir de 3 años, duración 40 min, entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es. Es el espectáculo de este calendario con la edad recomendada más ajustada a la franja de 3-5 años.',
+    source:'teatrosanfrancisco.es · ctickets.es'
+  },
+  {
+    id:'soyunoso', title:'Soy un oso', cat:'teatro',
+    start:'2026-12-12', end:'2026-12-13',
+    place:'Teatro San Francisco', time:'sáb 18:00 · dom 12:00',
+    summary:'Títeres, marionetas y música de Cía. Yheppa Títeres (Asturias). Ursus, un oso, sale de su cueva en primavera y descubre que su bosque ha sido sustituido por una fábrica; sus habitantes le hacen dudar de que sea realmente un oso. Basado en el cuento "El oso que no era", de Frank Tashlin.',
+    detail:'Apto a partir de 4 años · duración 50 min · entrada 7 €. Reverificado esta semana directamente en teatrosanfrancisco.es. Sin cambios.',
+    source:'teatrosanfrancisco.es · ctickets.es'
+  },
+  {
+    id:'papanoelvq', title:'A la caza de Papá Noel', cat:'taller',
+    start:'2026-12-17', end:'2026-12-17',
+    place:'Biblioteca de Villaquilambre', time:'hora por confirmar',
+    summary:'Presentación y firma del libro infantil de Emma S. Varela, dentro del ciclo "Otoño Cultural" de Villaquilambre.',
+    detail:'Reverificado esta semana directamente en la fuente del ciclo "Otoño Cultural": sigue siendo el último acto confirmado, con la hora aún sin anunciar.',
+    source:'menudoesleon.com · ileon.eldiario.es · heraldodeleon.es'
+  },
+  {
+    id:'cabalgaza', title:'La Cabalgaza — desfile de Papá Noel', cat:'fiesta',
+    start:'2026-12-19', end:'2026-12-19',
+    place:'Calles de León (recorrido por anunciar)', time:'hora por confirmar',
+    summary:'Desfile navideño con Papá Noel, carrozas, música, acróbatas, elfos, duendes y renos, dentro de una gira de la Cabalgaza por cinco ciudades de Castilla y León (Valladolid 12, Palencia 13, León 19, Salamanca 20 y Zamora 23 de diciembre).',
+    detail:'Reconfirmado esta semana por una fuente adicional (Digital de León, 16 nov). El horario y el recorrido por las calles de León todavía no se han publicado.',
+    source:'elespanol.com · digitaldeleon.com'
+  }
+];
+
+const recurring = [
+  { title:'"Conocemos a la reina Urraca" (taller, Palacio del Conde Luna) — NUEVO esta semana', desc:'Viernes 27 (18:00) y sábado 28 de noviembre (12:00) de 2026. Recomendado de 6 a 8 años, por encima de la franja de 3-5 de este calendario. Parece continuar el ciclo histórico de talleres del Palacio del Conde Luna con una temática distinta a la de años anteriores.', source:'menudoesleon.com (consultado esta semana)' },
+  { title:'Teatro San Francisco — ciclo infantil-familiar de enero de 2027 (fuera de ventana, para referencia)', desc:'Papá Zorro (9-10 ene, 4-9 años), Dale (16-17 ene, desde 5 años), Casa (23-24 ene, desde 4 años) y La niña de las trenzas al revés (30-31 ene, desde 4 años). Todas sáb 18:00 / dom 12:00, 7 €. Se incorporarán a la lista principal cuando la ventana móvil las alcance.', source:'teatrosanfrancisco.es (calendario oficial, consultado esta semana)' },
+  { title:'MUSAC — visita familiar (Pistoletto / exposiciones temporales)', desc:'Domingo 6 de diciembre de 2026, 12:00 (la visita del 22 de noviembre ya se ha celebrado). Pensada para niños de 5 a 12 años, por encima de la franja de 3-5 de este calendario. No se ha podido consultar esta semana si existe algún programa "Pequeamigos" o "Diverviaje para Pequeamigos" (error del servidor de musac.es).', source:'musac.es · menudoesleon.com (semanas anteriores)' },
+  { title:'Rompamos barreras (taller, Biblioteca Pública de León)', desc:'Miércoles 25 de noviembre y 2 de diciembre de 2026, 19:00, con Mar Bonaque. Edad confirmada: a partir de 6 años, por lo que queda fuera de la franja de 3-5 años de este calendario.', source:'bibliotecas.jcyl.es (consultado en semanas anteriores)' },
+  { title:'Villaquilambre — ciclo "Otoño Cultural"', desc:'Confirmado esta semana directamente en la fuente que no hay más funciones de teatro/música en diciembre aparte de "Menuda momia" (29 nov) y "A la caza de Papá Noel" (17 dic), ambas ya en la lista principal.', source:'menudoesleon.com (consultado esta semana)' },
+  { title:'"Teatro para compartir en familia" — Casa de Cultura de Armunia', desc:'Ciclo gratuito municipal de teatro/títeres para toda la familia, sábados 18:00. No se ha reverificado esta semana; sin convocatoria de 2026 encontrada hasta ahora.', source:'búsquedas de prensa local (sin convocatoria 2026 confirmada)' },
+  { title:'Biblioescena 2026 (Junta de Castilla y León)', desc:'Ciclo regional de teatro infantil/familiar en bibliotecas públicas, con sesiones de 3+, 4+ y 5+ años en otoño de 2026. En búsquedas anteriores todas las sesiones localizadas eran en la Biblioteca Pública de Salamanca, ninguna en León capital. Esta semana se ha localizado un programa similar de cuentos para bebés, pero en Valladolid, no en León.', source:'turismocastillayleon.com' },
+  { title:'Biblioteca Pública de León — agenda de diciembre', desc:'No se ha podido consultar esta semana la página de agenda de bibliotecas.jcyl.es (error de acceso). Se reintentará la próxima semana para localizar cuentacuentos y talleres de diciembre específicos para 3-5 años.', source:'bibliotecas.jcyl.es' },
+  { title:'Agenda de fin de semana (menudoesleon.com, ahoraleon.com)', desc:'El post semanal de menudoesleon.com sigue al día (publicado 18 nov, revisado 23 nov, cubre el 27-29 de noviembre); los dos eventos nuevos de esta semana salen de ahí. ahoraleon.com no ha aportado información adicional relevante esta semana.', source:'menudoesleon.com' }
+];
+
+const WINDOW_START = '2026-11-24';
+const WINDOW_END   = '2026-12-24';
+
+function iso(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+// "Hoy" según el reloj del dispositivo, para que el círculo avance solo en la app instalada.
+const _now = new Date();
+const TODAY = iso(_now.getFullYear(), _now.getMonth(), _now.getDate());
+
+function inRange(dateStr, a, b){ return dateStr >= a && dateStr <= b; }
+function eventsOnDay(dateStr){ return events.filter(e => inRange(dateStr, e.start, e.end)); }
+
+function buildMonth(year, monthIndex, label){
+  const daysInMonth = new Date(year, monthIndex+1, 0).getDate();
+  const firstWeekday = (new Date(year, monthIndex, 1).getDay() + 6) % 7; // 0=Mon
+  const wrap = document.createElement('div');
+  wrap.className = 'month';
+  const h2 = document.createElement('h2');
+  h2.textContent = label;
+  wrap.appendChild(h2);
+  const grid = document.createElement('div');
+  grid.className = 'grid7';
+  ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(w=>{
+    const el = document.createElement('div');
+    el.className='wd'; el.textContent=w; grid.appendChild(el);
+  });
+  for(let i=0;i<firstWeekday;i++){
+    const b = document.createElement('div'); b.className='day blank'; grid.appendChild(b);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = iso(year, monthIndex, d);
+    const outOfWindow = !inRange(dateStr, WINDOW_START, WINDOW_END);
+    const dayEvents = outOfWindow ? [] : eventsOnDay(dateStr);
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'day'
+      + (outOfWindow ? ' out' : '')
+      + (dateStr===TODAY ? ' today' : '')
+      + (dayEvents.length ? ' has-events' : '');
+    cell.dataset.date = dateStr;
+    if(!dayEvents.length) cell.tabIndex = -1;
+    const num = document.createElement('div');
+    num.className='num'; num.textContent=d;
+    cell.appendChild(num);
+    if(dayEvents.length){
+      const marks = document.createElement('div');
+      marks.className='marks';
+      dayEvents.forEach(e=>{
+        const m = document.createElement('div');
+        m.className = 'mk ' + e.cat;
+        marks.appendChild(m);
+      });
+      cell.appendChild(marks);
+      const names = dayEvents.map(e=>e.title).join(', ');
+      cell.setAttribute('aria-label', `${d} — ${names}. Ver detalle`);
+      cell.addEventListener('click', ()=> openModal(dateStr, dayEvents));
+    } else {
+      cell.setAttribute('aria-label', String(d));
+    }
+    grid.appendChild(cell);
+  }
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+document.getElementById('months').appendChild(buildMonth(2026, 10, 'Noviembre 2026'));
+document.getElementById('months').appendChild(buildMonth(2026, 11, 'Diciembre 2026'));
+
+const legend = document.getElementById('legend');
+Object.entries(CATS).forEach(([key,c])=>{
+  const s = document.createElement('span');
+  s.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.label}`;
+  legend.appendChild(s);
+});
+
+const MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+function renderEventCard(e){
+  const [ys,ms,ds] = e.start.split('-').map(Number);
+  const card = document.createElement('div');
+  card.className='card';
+  card.innerHTML = `
+    <div class="datebadge">
+      <div class="d">${ds}</div>
+      <div class="m">${MONTHS_ES[ms-1]}</div>
+      ${e.end!==e.start ? `<div class="to">→ ${Number(e.end.split('-')[2])} ${MONTHS_ES[Number(e.end.split('-')[1])-1]}</div>` : ''}
+    </div>
+    <div>
+      <span class="tag ${e.cat}">${CATS[e.cat].label}</span>
+      <h3>${e.title}</h3>
+      <div class="meta">${e.time ? `<span>🕓 ${e.time}</span>` : ''}<span>📍 ${e.place}</span></div>
+      <p>${e.summary}</p>
+      <p class="detail">${e.detail}</p>
+      <div class="src">Fuente: ${e.source}</div>
+    </div>`;
+  return card;
+}
+
+const cards = document.getElementById('cards');
+events.forEach(e=> cards.appendChild(renderEventCard(e)));
+
+// --- Modal: tocar un día para ver sus eventos ---
+const backdrop = document.getElementById('modalBackdrop');
+const modalDate = document.getElementById('modalDate');
+const modalCards = document.getElementById('modalCards');
+const modalClose = document.getElementById('modalClose');
+let lastFocused = null;
+
+function fmtLongDate(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const WD = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+  const wd = (new Date(y, m-1, d).getDay() + 6) % 7;
+  const MONTHS_LONG = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${WD[wd]}, ${d} de ${MONTHS_LONG[m-1]}`;
+}
+
+function openModal(dateStr, dayEvents){
+  lastFocused = document.activeElement;
+  modalDate.textContent = fmtLongDate(dateStr);
+  modalCards.innerHTML = '';
+  if(dayEvents.length){
+    dayEvents.forEach(e => modalCards.appendChild(renderEventCard(e)));
+  } else {
+    const p = document.createElement('p');
+    p.className = 'modal-empty';
+    p.textContent = 'No hay eventos registrados ese día.';
+    modalCards.appendChild(p);
+  }
+  backdrop.classList.add('open');
+  modalClose.focus();
+  document.addEventListener('keydown', onModalKeydown);
+}
+
+function closeModal(){
+  backdrop.classList.remove('open');
+  document.removeEventListener('keydown', onModalKeydown);
+  if(lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+}
+
+function onModalKeydown(ev){
+  if(ev.key === 'Escape') closeModal();
+}
+
+modalClose.addEventListener('click', closeModal);
+backdrop.addEventListener('click', (ev)=>{ if(ev.target === backdrop) closeModal(); });
+
+const recWrap = document.getElementById('recurring');
+recurring.forEach(r=>{
+  const el = document.createElement('div');
+  el.className='rec-item';
+  el.innerHTML = `<h4>${r.title}</h4><p>${r.desc} · <em>${r.source}</em></p>`;
+  recWrap.appendChild(el);
+});
+
+// --- PWA: service worker para uso sin conexión ---
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
